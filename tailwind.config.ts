@@ -16,6 +16,13 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
+      fontSize: {
+        'page-title': ['20px', { lineHeight: '1.4', fontWeight: '600' }],
+        'section-title': ['14px', { lineHeight: '1.4', fontWeight: '600', letterSpacing: '0.05em' }],
+        'body': ['14px', { lineHeight: '1.4', fontWeight: '400' }],
+        'label': ['12px', { lineHeight: '1.4', fontWeight: '500' }],
+        'small': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -49,6 +56,7 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          hover: "hsl(var(--card-hover))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
@@ -87,10 +95,20 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "slide-in-right": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "slide-out-right": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "slide-in-right": "slide-in-right 0.2s ease-out",
+        "slide-out-right": "slide-out-right 0.2s ease-out",
       },
     },
   },

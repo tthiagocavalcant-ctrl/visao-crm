@@ -8,12 +8,12 @@ interface KpiCardProps {
 }
 
 const KpiCard = ({ label, value, icon, valueColor }: KpiCardProps) => (
-  <div className="bg-card border border-border rounded-lg p-5">
-    <div className="flex items-center justify-between mb-3">
-      <span className="text-sm text-muted-foreground font-medium">{label}</span>
+  <div className="bg-card border border-border rounded p-3">
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-label text-muted-foreground">{label}</span>
       <span className="text-muted-foreground">{icon}</span>
     </div>
-    <p className={`text-2xl font-bold ${valueColor || 'text-foreground'}`}>{value}</p>
+    <p className={`text-xl font-bold ${valueColor || 'text-foreground'}`}>{value}</p>
   </div>
 );
 

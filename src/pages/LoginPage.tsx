@@ -23,54 +23,54 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card border border-border rounded-lg p-8">
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-6 h-6 text-primary" />
+      <div className="w-full max-w-sm">
+        <div className="bg-card border border-border rounded-md p-6">
+          <div className="text-center mb-6">
+            <div className="w-10 h-10 bg-primary rounded flex items-center justify-center mx-auto mb-3">
+              <LogIn className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Entrar no CRM</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Acesse sua conta para continuar</p>
+            <h1 className="text-page-title text-foreground">Entrar no CRM</h1>
+            <p className="text-muted-foreground text-xs mt-1">Acesse sua conta para continuar</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1.5">E-mail</label>
+              <label className="block text-label text-muted-foreground mb-1">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-muted border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
                 placeholder="seu@email.com"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Senha</label>
+              <label className="block text-label text-muted-foreground mb-1">Senha</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-muted border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
                 placeholder="••••••••"
                 required
               />
             </div>
 
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-xs text-destructive">{error}</p>
             )}
 
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 rounded-md transition-colors"
+              className="w-full bg-primary hover:bg-primary/85 text-primary-foreground font-medium py-2 rounded text-[13px] transition-colors"
             >
               Entrar
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
+          <div className="mt-4 pt-3 border-t border-border">
+            <p className="text-[11px] text-muted-foreground text-center">
               Demo: <strong>admin@sistema.com</strong> (Super Admin) ou <strong>cliente@empresa.com</strong> (Cliente)
             </p>
           </div>
