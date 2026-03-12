@@ -92,6 +92,7 @@ export const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
   export_leads: false,
   delete_leads: false,
   manage_statuses: false,
+  conversas: false,
 };
 
 export const PIPELINE_STATUSES = [
