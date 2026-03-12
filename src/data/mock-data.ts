@@ -223,6 +223,82 @@ export const mockBarData = [
   { name: 'Vendas', value: 1 },
 ];
 
+export interface Conversation {
+  id: string;
+  account_id: string;
+  contact_name: string;
+  contact_phone: string;
+  contact_avatar_url?: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+  status: 'active' | 'archived' | 'blocked';
+  is_online: boolean;
+  assigned_to?: string;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  account_id: string;
+  content: string;
+  message_type: 'text' | 'image' | 'audio' | 'document' | 'system';
+  media_url?: string;
+  direction: 'inbound' | 'outbound';
+  status: 'sent' | 'delivered' | 'read';
+  whatsapp_message_id?: string;
+  sent_by?: string;
+  created_at: string;
+}
+
+export const mockConversations: Conversation[] = [
+  {
+    id: 'conv-1', account_id: 'acc-1', contact_name: 'Maria Aparecida', contact_phone: '5511988887777',
+    last_message: 'Olá, gostaria de agendar um exame de vista', last_message_at: '2026-03-12T14:30:00',
+    unread_count: 2, status: 'active', is_online: true, created_at: '2026-03-10T10:00:00',
+  },
+  {
+    id: 'conv-2', account_id: 'acc-1', contact_name: 'Carlos Eduardo', contact_phone: '5511977776666',
+    last_message: 'Obrigado, vou comparecer amanhã!', last_message_at: '2026-03-12T13:15:00',
+    unread_count: 0, status: 'active', is_online: false, created_at: '2026-03-09T15:00:00',
+  },
+  {
+    id: 'conv-3', account_id: 'acc-1', contact_name: 'Ana Paula Santos', contact_phone: '5511966665555',
+    last_message: 'Qual o valor da consulta?', last_message_at: '2026-03-12T11:45:00',
+    unread_count: 1, status: 'active', is_online: true, created_at: '2026-03-08T09:00:00',
+  },
+  {
+    id: 'conv-4', account_id: 'acc-1', contact_name: 'Roberto Mendes', contact_phone: '5511955554444',
+    last_message: 'Perfeito, até segunda!', last_message_at: '2026-03-11T18:20:00',
+    unread_count: 0, status: 'active', is_online: false, created_at: '2026-03-07T14:00:00',
+  },
+  {
+    id: 'conv-5', account_id: 'acc-1', contact_name: 'Fernanda Lima', contact_phone: '5511944443333',
+    last_message: 'Recebi o lembrete, obrigada!', last_message_at: '2026-03-11T16:00:00',
+    unread_count: 0, status: 'active', is_online: false, created_at: '2026-03-06T11:00:00',
+  },
+];
+
+export const mockMessages: Message[] = [
+  // conv-1 messages
+  { id: 'msg-1', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Conversa iniciada', message_type: 'system', direction: 'inbound', status: 'read', created_at: '2026-03-10T10:00:00' },
+  { id: 'msg-2', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Olá! Vi o anúncio de vocês sobre exame de vista gratuito. Ainda estão fazendo?', message_type: 'text', direction: 'inbound', status: 'read', created_at: '2026-03-10T10:05:00' },
+  { id: 'msg-3', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Olá Maria! Sim, estamos com essa promoção. Gostaria de agendar?', message_type: 'text', direction: 'outbound', status: 'read', sent_by: '2', created_at: '2026-03-10T10:08:00' },
+  { id: 'msg-4', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Sim! Qual horário tem disponível essa semana?', message_type: 'text', direction: 'inbound', status: 'read', created_at: '2026-03-10T10:10:00' },
+  { id: 'msg-5', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Temos disponível quarta às 14h ou quinta às 10h. Qual prefere?', message_type: 'text', direction: 'outbound', status: 'read', sent_by: '2', created_at: '2026-03-10T10:12:00' },
+  { id: 'msg-6', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Quarta às 14h está ótimo!', message_type: 'text', direction: 'inbound', status: 'read', created_at: '2026-03-10T10:15:00' },
+  { id: 'msg-7', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Perfeito! Agendado para quarta, dia 12/03, às 14h. Nosso endereço é Rua das Flores, 123 - Centro. Lembre-se de trazer um documento com foto. 😊', message_type: 'text', direction: 'outbound', status: 'delivered', sent_by: '2', created_at: '2026-03-10T10:18:00' },
+  { id: 'msg-8', conversation_id: 'conv-1', account_id: 'acc-1', content: 'Olá, gostaria de agendar um exame de vista', message_type: 'text', direction: 'inbound', status: 'delivered', created_at: '2026-03-12T14:30:00' },
+  // conv-2 messages
+  { id: 'msg-20', conversation_id: 'conv-2', account_id: 'acc-1', content: 'Boa tarde Carlos! Lembrando do seu exame amanhã às 10h.', message_type: 'text', direction: 'outbound', status: 'read', sent_by: '2', created_at: '2026-03-12T13:00:00' },
+  { id: 'msg-21', conversation_id: 'conv-2', account_id: 'acc-1', content: 'Obrigado, vou comparecer amanhã!', message_type: 'text', direction: 'inbound', status: 'read', created_at: '2026-03-12T13:15:00' },
+  // conv-3 messages
+  { id: 'msg-30', conversation_id: 'conv-3', account_id: 'acc-1', content: 'Boa tarde! O exame é gratuito?', message_type: 'text', direction: 'inbound', status: 'read', created_at: '2026-03-12T11:30:00' },
+  { id: 'msg-31', conversation_id: 'conv-3', account_id: 'acc-1', content: 'Sim, o exame de vista é totalmente gratuito!', message_type: 'text', direction: 'outbound', status: 'read', sent_by: '2', created_at: '2026-03-12T11:35:00' },
+  { id: 'msg-32', conversation_id: 'conv-3', account_id: 'acc-1', content: 'Qual o valor da consulta?', message_type: 'text', direction: 'inbound', status: 'delivered', created_at: '2026-03-12T11:45:00' },
+];
+
 export const BRAZILIAN_TIMEZONES = [
   'America/Sao_Paulo',
   'America/Rio_Branco',
