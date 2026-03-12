@@ -5,10 +5,17 @@ export interface Account {
   whatsapp_link: string;
   n8n_webhook: string;
   followup_webhook: string;
+  sale_webhook: string;
   facebook_pixel: string;
   google_ads_tag: string;
   api_key: string;
   timezone: string;
+  responsible_name: string;
+  phone: string;
+  email: string;
+  status: 'active' | 'inactive';
+  permissions: { dashboard: boolean; pipeline: boolean; settings: boolean; reports: boolean };
+  created_at: string;
 }
 
 export interface Lead {
@@ -74,17 +81,65 @@ export const mockUsers: User[] = [
   { id: '3', email: 'admin@nexstation.com.br', name: 'NexStation', role: 'ADMIN', account_id: 'acc-1' },
 ];
 
-export const mockAccount: Account = {
-  id: 'acc-1',
-  name: 'Ótica Visão Clara',
-  whatsapp_link: 'https://wa.me/5511999999999',
-  n8n_webhook: '',
-  followup_webhook: '',
-  facebook_pixel: '',
-  google_ads_tag: '',
-  api_key: 'sk-xxxx-xxxx-xxxx-xxxx',
-  timezone: 'America/Sao_Paulo',
-};
+export const mockAccounts: Account[] = [
+  {
+    id: 'acc-1',
+    name: 'Ótica Visão Clara',
+    whatsapp_link: 'https://wa.me/5511999999999',
+    n8n_webhook: 'https://n8n.example.com/webhook/abc123',
+    followup_webhook: '',
+    sale_webhook: '',
+    facebook_pixel: '',
+    google_ads_tag: '',
+    api_key: 'sk-xxxx-xxxx-xxxx-xxxx',
+    timezone: 'America/Sao_Paulo',
+    responsible_name: 'João Silva',
+    phone: '11999999999',
+    email: 'cliente@empresa.com',
+    status: 'active',
+    permissions: { dashboard: true, pipeline: true, settings: true, reports: false },
+    created_at: '2024-01-15T10:00:00',
+  },
+  {
+    id: 'acc-2',
+    name: 'Ótica Premium',
+    whatsapp_link: 'https://wa.me/5521988888888',
+    n8n_webhook: '',
+    followup_webhook: '',
+    sale_webhook: '',
+    facebook_pixel: 'FB-12345',
+    google_ads_tag: '',
+    api_key: 'sk-yyyy-yyyy-yyyy-yyyy',
+    timezone: 'America/Sao_Paulo',
+    responsible_name: 'Maria Santos',
+    phone: '21988888888',
+    email: 'maria@oticapremium.com',
+    status: 'active',
+    permissions: { dashboard: true, pipeline: true, settings: true, reports: false },
+    created_at: '2024-02-20T14:00:00',
+  },
+  {
+    id: 'acc-3',
+    name: 'Ótica do Centro',
+    whatsapp_link: '',
+    n8n_webhook: '',
+    followup_webhook: '',
+    sale_webhook: '',
+    facebook_pixel: '',
+    google_ads_tag: '',
+    api_key: 'sk-zzzz-zzzz-zzzz-zzzz',
+    timezone: 'America/Sao_Paulo',
+    responsible_name: 'Carlos Oliveira',
+    phone: '31977777777',
+    email: 'carlos@oticacentro.com',
+    status: 'inactive',
+    permissions: { dashboard: true, pipeline: true, settings: true, reports: false },
+    created_at: '2024-03-01T09:00:00',
+  },
+];
+
+// Keep backward compat
+export const mockAccount: Account = mockAccounts[0];
 
 export const mockLeads: Lead[] = [
   {
@@ -142,4 +197,16 @@ export const mockBarData = [
   { name: 'Agendamentos', value: 2 },
   { name: 'Comparecimentos', value: 1 },
   { name: 'Vendas', value: 1 },
+];
+
+export const BRAZILIAN_TIMEZONES = [
+  'America/Sao_Paulo',
+  'America/Rio_Branco',
+  'America/Manaus',
+  'America/Cuiaba',
+  'America/Fortaleza',
+  'America/Recife',
+  'America/Belem',
+  'America/Bahia',
+  'America/Noronha',
 ];
