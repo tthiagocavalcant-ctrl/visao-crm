@@ -38,6 +38,7 @@ export interface EmployeePermissions {
   export_leads: boolean;
   delete_leads: boolean;
   manage_statuses: boolean;
+  conversas: boolean;
 }
 
 export interface Employee {
