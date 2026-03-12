@@ -283,7 +283,7 @@ const PipelinePage = () => {
                   </div>
                   <div className="space-y-1.5">
                     {columnLeads.length === 0 ? (
-                      <div className="bg-card border border-border rounded p-4 flex flex-col items-center text-center">
+                      <div className="glass-card border border-border rounded p-4 flex flex-col items-center text-center">
                         <User className="w-6 h-6 text-muted-foreground/30 mb-1" />
                         <p className="text-xs text-muted-foreground">Nenhum lead</p>
                       </div>
