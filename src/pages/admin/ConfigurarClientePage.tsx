@@ -108,6 +108,7 @@ const ConfigurarClientePage = () => {
       <Tabs defaultValue="dados" className="w-full">
         <TabsList className="bg-muted/50 border border-border">
           <TabsTrigger value="dados">Dados da Conta</TabsTrigger>
+          <TabsTrigger value="whatsappConfig">WhatsApp</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp & Forms</TabsTrigger>
           <TabsTrigger value="n8n">N8n / Webhook</TabsTrigger>
           <TabsTrigger value="pixels">Pixels & Tracking</TabsTrigger>
