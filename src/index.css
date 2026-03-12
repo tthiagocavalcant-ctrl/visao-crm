@@ -8,54 +8,55 @@
   :root {
     font-family: 'Inter', system-ui, sans-serif;
 
-    --background: 216 28% 7%;
-    --foreground: 0 0% 100%;
+    --background: 240 33% 9%;
+    --foreground: 240 10% 93%;
 
-    --card: 220 35% 13%;
-    --card-foreground: 0 0% 100%;
+    --card: 249 33% 17%;
+    --card-foreground: 240 10% 93%;
+    --card-hover: 249 25% 21%;
 
-    --popover: 220 35% 13%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 249 33% 17%;
+    --popover-foreground: 240 10% 93%;
 
-    --primary: 222 100% 64%;
+    --primary: 231 85% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 25% 18%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 249 33% 17%;
+    --secondary-foreground: 240 10% 93%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 220 20% 63%;
+    --muted: 249 25% 14%;
+    --muted-foreground: 249 15% 60%;
 
-    --accent: 220 25% 18%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 249 25% 21%;
+    --accent-foreground: 240 10% 93%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 4 74% 57%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 145 63% 49%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 36 90% 51%;
     --warning-foreground: 0 0% 0%;
 
-    --purple: 271 91% 65%;
+    --purple: 282 44% 53%;
     --purple-foreground: 0 0% 100%;
 
-    --border: 217 40% 19%;
-    --input: 217 40% 19%;
-    --ring: 222 100% 64%;
+    --border: 249 25% 24%;
+    --input: 249 25% 24%;
+    --ring: 231 85% 60%;
 
-    --radius: 0.75rem;
-    --radius-sm: 0.5rem;
+    --radius: 0.25rem;
+    --radius-sm: 0.25rem;
 
-    --sidebar-background: 220 35% 10%;
-    --sidebar-foreground: 220 20% 63%;
-    --sidebar-primary: 222 100% 64%;
+    --sidebar-background: 218 50% 16%;
+    --sidebar-foreground: 249 15% 60%;
+    --sidebar-primary: 231 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 40% 19%;
-    --sidebar-ring: 222 100% 64%;
+    --sidebar-accent: 218 40% 20%;
+    --sidebar-accent-foreground: 240 10% 93%;
+    --sidebar-border: 249 25% 24%;
+    --sidebar-ring: 231 85% 60%;
   }
 }
 
@@ -66,5 +67,34 @@
 
   body {
     @apply bg-background text-foreground;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Monday.com inspired table rows */
+@layer components {
+  .table-row-even {
+    background-color: hsl(var(--card));
+  }
+  .table-row-odd {
+    background-color: hsl(var(--background));
+  }
+  .table-row-hover:hover {
+    background-color: hsl(var(--card-hover));
+  }
+
+  /* Status badges - flat rectangles */
+  .status-badge {
+    @apply px-3 py-1 text-xs font-medium inline-flex items-center;
+    border-radius: 4px;
+  }
+
+  /* Monday.com active sidebar item */
+  .sidebar-item-active {
+    border-left: 3px solid hsl(var(--primary));
+    background-color: hsl(var(--sidebar-accent));
+    color: hsl(var(--foreground));
   }
 }
