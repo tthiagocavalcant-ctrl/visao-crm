@@ -1,20 +1,22 @@
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
-  Home, CheckSquare, FolderKanban, MessageCircle, Kanban, Settings, LogOut, Sun, Moon, Users,
+  Home, CheckSquare, MessageCircle, Kanban, Settings, LogOut, Sun, Moon, Users, Bell, ChevronDown,
 } from 'lucide-react';
-import { mockAccounts, mockEmployees, mockTasks, mockProjects } from '@/data/mock-data';
+import { mockAccounts, mockEmployees, mockTasks } from '@/data/mock-data';
 import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const allNavItems = [
-  { label: 'Início', icon: Home, href: '/dashboard', permission: 'dashboard' as const },
-  { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', permission: 'tarefas' as const },
-  { label: 'Projetos', icon: FolderKanban, href: '/projetos', permission: 'projetos' as const },
-  { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline', permission: 'pipeline' as const },
-  { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
-  { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
+  { label: 'Início', href: '/dashboard', permission: 'dashboard' as const },
+  { label: 'Pipeline CRM', href: '/pipeline', permission: 'pipeline' as const },
+  { label: 'Tarefas', href: '/tarefas', permission: 'tarefas' as const },
+  { label: 'Conversas', href: '/conversas', permission: 'conversas' as const },
+  { label: 'Configurações', href: '/configuracoes', permission: 'settings' as const },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
@@ -29,15 +31,11 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         if (item.permission === 'settings') return false;
         if (item.permission === 'dashboard') return user.permissions?.dashboard;
         if (item.permission === 'conversas') return user.permissions?.conversas;
-        // tarefas and projetos always visible for employees
-        if (item.permission === 'tarefas' || item.permission === 'projetos') return true;
         return true;
       });
     }
     return allNavItems;
   }, [user]);
-
-  const currentNav = navItems.find((n) => location.pathname.startsWith(n.href));
 
   const handleLogout = () => { logout(); navigate('/'); };
 
@@ -58,177 +56,154 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   const totalTasks = relevantTasks.length;
   const taskPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const myDemands = useMemo(() => {
-    const assigneeId = myEmployeeId || user?.id;
-    return accountTasks.filter(t => t.assigned_to === assigneeId && t.status !== 'concluido').slice(0, 3);
-  }, [accountTasks, myEmployeeId, user]);
-
-  const activeProjects = mockProjects.filter(p => p.account_id === (user?.account_id || 'acc-1') && p.status === 'active').slice(0, 3);
-  const completedProjects = mockProjects.filter(p => p.account_id === (user?.account_id || 'acc-1') && p.status === 'completed').length;
-  const totalProjects = mockProjects.filter(p => p.account_id === (user?.account_id || 'acc-1')).length;
-
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   const getAvatarColor = (name: string) => {
     const colors = ['bg-purple-600', 'bg-blue-600', 'bg-emerald-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-600'];
     return colors[name.charCodeAt(0) % colors.length];
   };
 
-  const statusDotColor = (status: string) => {
-    if (status === 'em_andamento') return 'bg-warning';
-    if (status === 'a_fazer') return 'bg-primary';
-    return 'bg-success';
-  };
+  const userRoleLabel = user?.role === 'ADMIN_GERAL' ? 'Super Admin' : user?.role === 'FUNCIONARIO' ? (user.cargo || 'Funcionário') : 'Administrador';
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-[260px] glass-sidebar flex flex-col shrink-0 overflow-y-auto">
-        {/* Account card */}
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
-              {account?.name?.charAt(0) || 'C'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground truncate">{account?.name || 'Empresa'}</p>
-              <p className="text-[11px] text-primary flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span className="text-primary font-medium">{teamMembers.length}</span>
-                <span className="text-muted-foreground">membros no time</span>
-              </p>
-            </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navigation Bar */}
+      <header className="h-14 glass-topbar flex items-center px-4 shrink-0 z-20">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-2 mr-6">
+          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+            C
           </div>
-          <div className="space-y-1 text-[11px] text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <span>✓</span>
-              <span>{completedProjects}/{totalProjects} projetos concluídos</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>☐</span>
-              <span>{completedTasks}/{totalTasks} tarefas concluídas</span>
-            </div>
-          </div>
-          <Progress value={taskPct} className="h-1.5 mt-2" />
         </div>
 
-        {/* Navigation */}
-        <nav className="py-2">
-          {navItems.map((item) => {
+        {/* Center: Nav links */}
+        <nav className="flex items-center gap-0 flex-1">
+          {navItems.map(item => {
             const active = location.pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-2.5 px-4 py-2 text-sm ${
+                className={`px-4 h-14 flex items-center text-sm font-medium transition-colors relative ${
                   active
-                    ? 'sidebar-item-active font-medium'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-[3px] border-transparent'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span>{item.label}</span>
+                {item.label}
+                {active && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Suas Demandas */}
-        <div className="px-4 py-2 border-t border-sidebar-border">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Suas Demandas</p>
-          {myDemands.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">Nenhuma demanda pendente</p>
-          ) : (
-            <div className="space-y-1.5">
-              {myDemands.map(task => (
-                <Link key={task.id} to="/tarefas" className="flex items-center gap-2 text-[11px] text-foreground hover:text-primary transition-colors">
-                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDotColor(task.status)}`} />
-                  <span className="truncate">{task.title}</span>
-                </Link>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+            title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button className="w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
+            <Bell className="w-4 h-4" />
+          </button>
+
+          {/* User dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent transition-colors">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                  {user?.name?.charAt(0)}
+                </div>
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <div className="px-3 py-2">
+                <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                <p className="text-[11px] text-muted-foreground">{userRoleLabel}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+                <Settings className="w-3.5 h-3.5 mr-2" /> Configurações
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <LogOut className="w-3.5 h-3.5 mr-2" /> Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      <div className="flex-1 flex min-h-0">
+        {/* Left Sidebar — Profile panel only */}
+        <aside className="w-[200px] glass-sidebar flex flex-col shrink-0 overflow-y-auto">
+          {/* Account card */}
+          <div className="p-3 border-b border-sidebar-border">
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
+                {account?.name?.charAt(0) || 'C'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground truncate">{account?.name || 'Empresa'}</p>
+                <p className="text-[10px] text-primary flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  <span className="font-medium">{teamMembers.length}</span>
+                  <span className="text-muted-foreground">membros</span>
+                </p>
+              </div>
+            </div>
+            <div className="space-y-0.5 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <span>☐</span>
+                <span>{completedTasks}/{totalTasks} tarefas concluídas</span>
+              </div>
+            </div>
+            <Progress value={taskPct} className="h-1 mt-1.5" />
+          </div>
+
+          {/* Meu Time */}
+          <div className="px-3 py-2 flex-1 min-h-0">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Meu Time</p>
+            <div className="space-y-1 overflow-y-auto">
+              {teamMembers.map(member => (
+                <div key={member.id} className="flex items-center gap-2 h-8">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 ${getAvatarColor(member.name)}`}>
+                    {getInitials(member.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-medium text-foreground truncate">{member.name}</p>
+                    <p className="text-[9px] text-muted-foreground truncate">{member.cargo}</p>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Meus Projetos */}
-        <div className="px-4 py-2 border-t border-sidebar-border">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Meus Projetos</p>
-            <Link to="/projetos" className="text-[10px] text-primary hover:underline">Ver todos</Link>
           </div>
-          {activeProjects.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground">Nenhum projeto ativo</p>
-          ) : (
-            <div className="space-y-2">
-              {activeProjects.map(proj => {
-                const pct = proj.total_tasks > 0 ? Math.round((proj.completed_tasks / proj.total_tasks) * 100) : 0;
-                return (
-                  <Link key={proj.id} to="/projetos" className="block">
-                    <p className="text-[11px] text-foreground truncate">{proj.name}</p>
-                    <Progress value={pct} className="h-1 mt-0.5" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
-        {/* Meu Time */}
-        <div className="px-4 py-2 border-t border-sidebar-border flex-1 min-h-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Meu Time</p>
-          <div className="space-y-1 overflow-y-auto max-h-40">
-            {teamMembers.slice(0, 5).map(member => (
-              <div key={member.id} className="flex items-center gap-2 h-8">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 ${getAvatarColor(member.name)}`}>
-                  {getInitials(member.name)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-medium text-foreground truncate">{member.name}</p>
-                  <p className="text-[9px] text-muted-foreground truncate">{member.cargo}</p>
-                </div>
+          {/* User footer */}
+          <div className="p-3 border-t border-sidebar-border mt-auto">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold shrink-0">
+                {user?.name?.charAt(0)}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* User section */}
-        <div className="p-3 border-t border-sidebar-border mt-auto">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-              {user?.name?.charAt(0)}
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium text-foreground truncate">{user?.name}</p>
+                <p className="text-[9px] text-muted-foreground truncate">{userRoleLabel}</p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-foreground truncate">{user?.name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {user?.role === 'ADMIN_GERAL' ? 'Super Admin' : user?.role === 'FUNCIONARIO' ? (user.cargo || 'Funcionário') : 'Administrador'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive w-full"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sair</span>
-          </button>
-        </div>
-      </aside>
-
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="h-12 glass-topbar flex items-center justify-between px-6 shrink-0">
-          <span className="text-base font-semibold text-foreground">
-            {currentNav?.label || 'Início'}
-          </span>
-          <div className="flex items-center gap-2">
             <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
-              title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-muted-foreground hover:text-destructive w-full"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <LogOut className="w-3 h-3" />
+              <span>Sair</span>
             </button>
           </div>
-        </header>
+        </aside>
 
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
