@@ -117,7 +117,7 @@ export const mockUsers: User[] = [
   {
     id: '4', email: 'func@empresa.com', name: 'Ana Vendedora', role: 'FUNCIONARIO', account_id: 'acc-1',
     cargo: 'Vendedora',
-    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false },
+    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false, conversas: false },
   },
 ];
 
