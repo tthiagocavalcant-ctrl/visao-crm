@@ -342,9 +342,9 @@ const EquipeTab = () => {
                   </div>
                   {emp.cargo && <Badge variant="outline" className="text-xs">{emp.cargo}</Badge>}
                   <div className="flex items-center gap-1 ml-2">
-                    {emp.permissions.pipeline && <Kanban className="w-3.5 h-3.5 text-muted-foreground" title="Pipeline" />}
-                    {emp.permissions.dashboard && <LayoutDashboard className="w-3.5 h-3.5 text-muted-foreground" title="Dashboard" />}
-                    {emp.permissions.export_leads && <Download className="w-3.5 h-3.5 text-muted-foreground" title="Exportar" />}
+                    {emp.permissions.pipeline && <span title="Pipeline"><Kanban className="w-3.5 h-3.5 text-muted-foreground" /></span>}
+                    {emp.permissions.dashboard && <span title="Dashboard"><LayoutDashboard className="w-3.5 h-3.5 text-muted-foreground" /></span>}
+                    {emp.permissions.export_leads && <span title="Exportar"><Download className="w-3.5 h-3.5 text-muted-foreground" /></span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
