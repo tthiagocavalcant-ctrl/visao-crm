@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { LogIn, Sun, Moon } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,9 +24,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+        title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
       <div className="w-full max-w-sm">
-        <div className="bg-card border border-border rounded-md p-6">
+        <div className="glass-card border border-border rounded-md p-6">
           <div className="text-center mb-6">
             <div className="w-10 h-10 bg-primary rounded flex items-center justify-center mx-auto mb-3">
               <LogIn className="w-5 h-5 text-primary-foreground" />
@@ -40,7 +51,7 @@ const LoginPage = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
+                className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
                 placeholder="seu@email.com"
                 required
               />
@@ -51,19 +62,17 @@ const LoginPage = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
+                className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
                 placeholder="••••••••"
                 required
               />
             </div>
 
-            {error && (
-              <p className="text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-xs text-destructive">{error}</p>}
 
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/85 text-primary-foreground font-medium py-2 rounded text-[13px] transition-colors"
+              className="w-full bg-primary hover:bg-primary/85 text-primary-foreground font-medium py-2 rounded text-[13px]"
             >
               Entrar
             </button>

@@ -283,14 +283,14 @@ const PipelinePage = () => {
                   </div>
                   <div className="space-y-1.5">
                     {columnLeads.length === 0 ? (
-                      <div className="bg-card border border-border rounded p-4 flex flex-col items-center text-center">
+                      <div className="glass-card border border-border rounded p-4 flex flex-col items-center text-center">
                         <User className="w-6 h-6 text-muted-foreground/30 mb-1" />
                         <p className="text-xs text-muted-foreground">Nenhum lead</p>
                       </div>
                     ) : (
                       columnLeads.map((lead) => (
                         <DraggableCard key={lead.id} id={lead.id}>
-                          <div onClick={() => setSelectedLead(lead)} className="bg-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover transition-colors">
+                          <div onClick={() => setSelectedLead(lead)} className="glass-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover">
                             <p className="text-sm font-medium text-foreground mb-0.5">{lead.name}</p>
                             <p className="text-[11px] text-primary flex items-center gap-1 mb-1.5">
                               <Phone className="w-3 h-3" /> {lead.phone}
@@ -322,7 +322,7 @@ const PipelinePage = () => {
           </div>
           <DragOverlay>
             {draggedLead ? (
-              <div className="bg-card border-2 border-primary rounded p-3 shadow-lg opacity-90 w-[250px]">
+              <div className="glass-card border-2 border-primary rounded p-3 shadow-lg opacity-90 w-[250px]">
                 <p className="text-sm font-medium text-foreground">{draggedLead.name}</p>
                 <p className="text-[11px] text-primary">{draggedLead.phone}</p>
               </div>
