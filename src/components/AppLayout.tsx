@@ -9,6 +9,7 @@ import {
   Home,
   Sun,
   Moon,
+  MessageCircle,
 } from 'lucide-react';
 import { useMemo } from 'react';
 
