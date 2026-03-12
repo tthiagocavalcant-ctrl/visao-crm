@@ -61,6 +61,7 @@ const AppRoutes = () => (
     <Route path="/" element={<LoginRoute />} />
     <Route path="/dashboard" element={<ProtectedRoute requiredPermission="dashboard"><DashboardPage /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+    <Route path="/conversas" element={<ProtectedRoute requiredPermission="conversas"><ConversasPage /></ProtectedRoute>} />
     <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="settings"><ConfiguracoesPage /></ProtectedRoute>} />
     <Route path="/admin/clientes" element={<AdminRoute><ClientesPage /></AdminRoute>} />
     <Route path="/admin/clientes/novo" element={<AdminRoute><NovoClientePage /></AdminRoute>} />
