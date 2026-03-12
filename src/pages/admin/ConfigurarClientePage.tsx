@@ -36,6 +36,12 @@ const ConfigurarClientePage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [formActive, setFormActive] = useState(true);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [evolutionUrl, setEvolutionUrl] = useState('');
+  const [evolutionKey, setEvolutionKey] = useState('');
+  const [evolutionInstance, setEvolutionInstance] = useState('');
+  const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
   if (!account) {
     return (
