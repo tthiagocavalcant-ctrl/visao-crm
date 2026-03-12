@@ -19,9 +19,11 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (email: string, _password: string) => {
+  const login = (email: string, password: string) => {
     const found = mockUsers.find((u) => u.email === email);
     if (found) {
+      // Simple password check for demo
+      if (email === 'admin@nexstation.com.br' && password !== 'admin') return false;
       setUser(found);
       return true;
     }

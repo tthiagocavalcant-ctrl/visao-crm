@@ -71,6 +71,7 @@ export const PIPELINE_STATUSES = [
 export const mockUsers: User[] = [
   { id: '1', email: 'admin@sistema.com', name: 'Admin Geral', role: 'ADMIN_GERAL' },
   { id: '2', email: 'cliente@empresa.com', name: 'João Silva', role: 'ADMIN', account_id: 'acc-1' },
+  { id: '3', email: 'admin@nexstation.com.br', name: 'NexStation', role: 'ADMIN', account_id: 'acc-1' },
 ];
 
 export const mockAccount: Account = {
