@@ -74,6 +74,40 @@ export interface Interaction {
   created_at: string;
 }
 
+export interface Task {
+  id: string;
+  account_id: string;
+  title: string;
+  description: string;
+  priority: 'alta' | 'media' | 'baixa';
+  status: 'a_fazer' | 'em_andamento' | 'concluido';
+  assigned_to: string;
+  created_by: string;
+  due_date?: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskActivity {
+  id: string;
+  task_id: string;
+  user_id: string;
+  action: 'created' | 'status_changed' | 'reassigned' | 'updated';
+  description: string;
+  created_at: string;
+}
+
+export interface Project {
+  id: string;
+  account_id: string;
+  name: string;
+  total_tasks: number;
+  completed_tasks: number;
+  status: 'active' | 'completed' | 'archived';
+  created_at: string;
+}
+
 export type UserRole = 'ADMIN_GERAL' | 'ADMIN' | 'FUNCIONARIO';
 
 export interface User {
