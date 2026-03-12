@@ -74,6 +74,40 @@ export interface Interaction {
   created_at: string;
 }
 
+export interface Task {
+  id: string;
+  account_id: string;
+  title: string;
+  description: string;
+  priority: 'alta' | 'media' | 'baixa';
+  status: 'a_fazer' | 'em_andamento' | 'concluido';
+  assigned_to: string;
+  created_by: string;
+  due_date?: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskActivity {
+  id: string;
+  task_id: string;
+  user_id: string;
+  action: 'created' | 'status_changed' | 'reassigned' | 'updated';
+  description: string;
+  created_at: string;
+}
+
+export interface Project {
+  id: string;
+  account_id: string;
+  name: string;
+  total_tasks: number;
+  completed_tasks: number;
+  status: 'active' | 'completed' | 'archived';
+  created_at: string;
+}
+
 export type UserRole = 'ADMIN_GERAL' | 'ADMIN' | 'FUNCIONARIO';
 
 export interface User {
@@ -187,6 +221,64 @@ export const mockEmployees: Employee[] = [
     permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false, conversas: false },
     active: true, created_at: '2024-03-01T10:00:00',
   },
+  {
+    id: 'emp-2', account_id: 'acc-1', name: 'Pedro Atendente', email: 'pedro@empresa.com',
+    role: 'FUNCIONARIO', cargo: 'Atendente',
+    permissions: { pipeline: true, dashboard: true, export_leads: false, delete_leads: false, manage_statuses: false, conversas: true },
+    active: true, created_at: '2024-03-05T10:00:00',
+  },
+  {
+    id: 'emp-3', account_id: 'acc-1', name: 'Carla Gestora', email: 'carla@empresa.com',
+    role: 'FUNCIONARIO', cargo: 'Gestora de Tráfego',
+    permissions: { pipeline: true, dashboard: true, export_leads: true, delete_leads: false, manage_statuses: true, conversas: true },
+    active: true, created_at: '2024-02-15T10:00:00',
+  },
+];
+
+export const mockProjects: Project[] = [
+  { id: 'proj-1', account_id: 'acc-1', name: 'Campanha Março', total_tasks: 8, completed_tasks: 3, status: 'active', created_at: '2026-03-01T10:00:00' },
+  { id: 'proj-2', account_id: 'acc-1', name: 'Site Novo', total_tasks: 12, completed_tasks: 12, status: 'completed', created_at: '2026-02-01T10:00:00' },
+  { id: 'proj-3', account_id: 'acc-1', name: 'Automação N8n', total_tasks: 5, completed_tasks: 1, status: 'active', created_at: '2026-03-05T10:00:00' },
+];
+
+export const mockTasks: Task[] = [
+  {
+    id: 'task-1', account_id: 'acc-1', title: 'Criar landing page da campanha', description: 'Desenvolver a landing page para a campanha de março com formulário de captura',
+    priority: 'alta', status: 'em_andamento', assigned_to: 'emp-1', created_by: '2',
+    due_date: '2026-03-15', tags: ['marketing'], created_at: '2026-03-10T10:00:00', updated_at: '2026-03-10T10:00:00',
+  },
+  {
+    id: 'task-2', account_id: 'acc-1', title: 'Configurar pixel do Facebook', description: 'Instalar e configurar o pixel do Facebook na landing page',
+    priority: 'media', status: 'a_fazer', assigned_to: 'emp-3', created_by: '2',
+    due_date: '2026-03-14', tags: ['tráfego'], created_at: '2026-03-10T11:00:00', updated_at: '2026-03-10T11:00:00',
+  },
+  {
+    id: 'task-3', account_id: 'acc-1', title: 'Gravar vídeo de depoimento', description: 'Gravar vídeo com cliente satisfeito para usar nas redes sociais',
+    priority: 'baixa', status: 'a_fazer', assigned_to: 'emp-2', created_by: '2',
+    due_date: '2026-03-20', tags: ['conteúdo'], created_at: '2026-03-11T09:00:00', updated_at: '2026-03-11T09:00:00',
+  },
+  {
+    id: 'task-4', account_id: 'acc-1', title: 'Responder leads pendentes', description: 'Fazer follow-up dos leads que não responderam',
+    priority: 'alta', status: 'em_andamento', assigned_to: 'emp-1', created_by: '2',
+    due_date: '2026-03-12', tags: ['vendas'], created_at: '2026-03-09T14:00:00', updated_at: '2026-03-12T08:00:00',
+  },
+  {
+    id: 'task-5', account_id: 'acc-1', title: 'Atualizar catálogo de armações', description: 'Adicionar novas armações ao catálogo online',
+    priority: 'media', status: 'concluido', assigned_to: 'emp-2', created_by: '2',
+    tags: ['produto'], created_at: '2026-03-05T10:00:00', updated_at: '2026-03-10T16:00:00',
+  },
+  {
+    id: 'task-6', account_id: 'acc-1', title: 'Revisar métricas semanais', description: 'Analisar métricas de performance da semana e preparar relatório',
+    priority: 'media', status: 'concluido', assigned_to: 'emp-3', created_by: '2',
+    tags: ['relatório'], created_at: '2026-03-07T10:00:00', updated_at: '2026-03-11T18:00:00',
+  },
+];
+
+export const mockTaskActivities: TaskActivity[] = [
+  { id: 'ta-1', task_id: 'task-1', user_id: '2', action: 'created', description: 'Tarefa criada por João Silva', created_at: '2026-03-10T10:00:00' },
+  { id: 'ta-2', task_id: 'task-1', user_id: '2', action: 'reassigned', description: 'Atribuída para Ana Vendedora', created_at: '2026-03-10T10:01:00' },
+  { id: 'ta-3', task_id: 'task-1', user_id: 'emp-1', action: 'status_changed', description: 'Status alterado para Em Andamento', created_at: '2026-03-11T09:00:00' },
+  { id: 'ta-4', task_id: 'task-4', user_id: '2', action: 'created', description: 'Tarefa criada por João Silva', created_at: '2026-03-09T14:00:00' },
 ];
 
 export const mockUnits: Unit[] = [];

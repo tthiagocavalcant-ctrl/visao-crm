@@ -12,6 +12,8 @@ import DashboardPage from "@/pages/DashboardPage";
 import PipelinePage from "@/pages/PipelinePage";
 import ConfiguracoesPage from "@/pages/ConfiguracoesPage";
 import ConversasPage from "@/pages/ConversasPage";
+import TarefasPage from "@/pages/TarefasPage";
+import ProjetosPage from "@/pages/ProjetosPage";
 import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
@@ -66,6 +68,8 @@ const AppRoutes = () => (
     <Route path="/dashboard" element={<ProtectedRoute requiredPermission="dashboard"><DashboardPage /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
     <Route path="/conversas" element={<ProtectedRoute requiredPermission="conversas"><ConversasPage /></ProtectedRoute>} />
+    <Route path="/tarefas" element={<ProtectedRoute><TarefasPage /></ProtectedRoute>} />
+    <Route path="/projetos" element={<ProtectedRoute><ProjetosPage /></ProtectedRoute>} />
     <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="settings"><ConfiguracoesPage /></ProtectedRoute>} />
     <Route path="/admin/clientes" element={<AdminRoute><ClientesPage /></AdminRoute>} />
     <Route path="/admin/clientes/novo" element={<AdminRoute><NovoClientePage /></AdminRoute>} />
