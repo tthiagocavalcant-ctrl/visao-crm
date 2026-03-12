@@ -12,6 +12,8 @@ import DashboardPage from "@/pages/DashboardPage";
 import PipelinePage from "@/pages/PipelinePage";
 import ConfiguracoesPage from "@/pages/ConfiguracoesPage";
 import ConversasPage from "@/pages/ConversasPage";
+import TarefasPage from "@/pages/TarefasPage";
+import ProjetosPage from "@/pages/ProjetosPage";
 import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
