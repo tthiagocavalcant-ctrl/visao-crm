@@ -322,7 +322,7 @@ const PipelinePage = () => {
           </div>
           <DragOverlay>
             {draggedLead ? (
-              <div className="bg-card border-2 border-primary rounded p-3 shadow-lg opacity-90 w-[250px]">
+              <div className="glass-card border-2 border-primary rounded p-3 shadow-lg opacity-90 w-[250px]">
                 <p className="text-sm font-medium text-foreground">{draggedLead.name}</p>
                 <p className="text-[11px] text-primary">{draggedLead.phone}</p>
               </div>
