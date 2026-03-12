@@ -34,6 +34,10 @@ const ProtectedRoute = ({ children, requiredPermission }: { children: React.Reac
       toast({ title: 'Você não tem permissão para acessar esta página' });
       return <Navigate to="/pipeline" replace />;
     }
+    if (requiredPermission === 'conversas' && !user.permissions?.conversas) {
+      toast({ title: 'Você não tem permissão para acessar esta página' });
+      return <Navigate to="/pipeline" replace />;
+    }
   }
 
   return <AppLayout>{children}</AppLayout>;

@@ -31,6 +31,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
       return allNavItems.filter(item => {
         if (item.permission === 'settings') return false;
         if (item.permission === 'dashboard') return user.permissions?.dashboard;
+        if (item.permission === 'conversas') return user.permissions?.conversas;
         return true;
       });
     }
