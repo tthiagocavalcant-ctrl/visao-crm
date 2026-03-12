@@ -21,7 +21,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw, Eye, EyeOff, QrCode, Unplug, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ConfigurarClientePage = () => {
