@@ -290,7 +290,7 @@ const PipelinePage = () => {
                     ) : (
                       columnLeads.map((lead) => (
                         <DraggableCard key={lead.id} id={lead.id}>
-                          <div onClick={() => setSelectedLead(lead)} className="bg-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover transition-colors">
+                          <div onClick={() => setSelectedLead(lead)} className="glass-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover">
                             <p className="text-sm font-medium text-foreground mb-0.5">{lead.name}</p>
                             <p className="text-[11px] text-primary flex items-center gap-1 mb-1.5">
                               <Phone className="w-3 h-3" /> {lead.phone}
