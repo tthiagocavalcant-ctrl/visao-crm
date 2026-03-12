@@ -251,4 +251,22 @@
   :root[data-theme="light"] .glass-card:hover {
     background: #f5f0ff;
   }
+
+  /* Chat bubbles */
+  :root[data-theme="dark"] .chat-bubble-sent {
+    background: #4a1d96;
+    color: #ffffff;
+  }
+  :root[data-theme="dark"] .chat-bubble-received {
+    background: #2a1f4e;
+    color: hsl(var(--foreground));
+  }
+  :root[data-theme="light"] .chat-bubble-sent {
+    background: #5b21b6;
+    color: #ffffff;
+  }
+  :root[data-theme="light"] .chat-bubble-received {
+    background: #f0e8ff;
+    color: hsl(var(--foreground));
+  }
 }

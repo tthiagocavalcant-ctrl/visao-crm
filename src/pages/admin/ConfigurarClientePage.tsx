@@ -21,7 +21,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw, Eye, EyeOff, QrCode, Unplug, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ConfigurarClientePage = () => {
@@ -36,6 +36,12 @@ const ConfigurarClientePage = () => {
   const [newPassword, setNewPassword] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [formActive, setFormActive] = useState(true);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [evolutionUrl, setEvolutionUrl] = useState('');
+  const [evolutionKey, setEvolutionKey] = useState('');
+  const [evolutionInstance, setEvolutionInstance] = useState('');
+  const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
   if (!account) {
     return (
@@ -102,6 +108,7 @@ const ConfigurarClientePage = () => {
       <Tabs defaultValue="dados" className="w-full">
         <TabsList className="bg-muted/50 border border-border">
           <TabsTrigger value="dados">Dados da Conta</TabsTrigger>
+          <TabsTrigger value="whatsappConfig">WhatsApp</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp & Forms</TabsTrigger>
           <TabsTrigger value="n8n">N8n / Webhook</TabsTrigger>
           <TabsTrigger value="pixels">Pixels & Tracking</TabsTrigger>
@@ -151,7 +158,96 @@ const ConfigurarClientePage = () => {
           </Card>
         </TabsContent>
 
-        {/* TAB: WhatsApp & Forms */}
+        {/* TAB: WhatsApp Config (Evolution API) */}
+        <TabsContent value="whatsappConfig" className="space-y-6 mt-6">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Smartphone className="w-5 h-5" /> Conexão Evolution API
+              </CardTitle>
+              <CardDescription>Configure a API Evolution para integração com o WhatsApp deste cliente</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Evolution API URL</Label>
+                <Input value={evolutionUrl} onChange={e => setEvolutionUrl(e.target.value)} placeholder="https://evolution.example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Evolution API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={evolutionKey}
+                    onChange={e => setEvolutionKey(e.target.value)}
+                    placeholder="Sua API Key"
+                  />
+                  <Button variant="outline" size="sm" onClick={() => setShowApiKey(!showApiKey)} className="shrink-0">
+                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Instance Name</Label>
+                <Input value={evolutionInstance} onChange={e => setEvolutionInstance(e.target.value)} placeholder="instance-name" />
+              </div>
+              <Button onClick={() => handleSave('WhatsApp Config')} className="w-full gap-2">💾 Salvar Configuração</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">Status da Conexão</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${
+                  whatsappStatus === 'connected' ? 'bg-success' :
+                  whatsappStatus === 'connecting' ? 'bg-warning animate-pulse' :
+                  'bg-destructive'
+                }`} />
+                <span className="text-sm font-medium text-foreground">
+                  {whatsappStatus === 'connected' ? 'Conectado' :
+                   whatsappStatus === 'connecting' ? 'Conectando...' :
+                   'Desconectado'}
+                </span>
+              </div>
+              {whatsappStatus === 'connected' && (
+                <p className="text-xs text-muted-foreground">Última conexão: 12/03/2026 às 14:30</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQrModal(true)}
+                  disabled={!evolutionUrl || !evolutionKey || !evolutionInstance}
+                  className="gap-2"
+                >
+                  <QrCode className="w-4 h-4" /> Gerar QR Code
+                </Button>
+                {whatsappStatus === 'connected' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="gap-2">
+                        <Unplug className="w-4 h-4" /> Desconectar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                        <AlertDialogDescription>O cliente perderá a conexão com o WhatsApp e não poderá enviar/receber mensagens até reconectar.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setWhatsappStatus('disconnected'); toast({ title: 'WhatsApp desconectado' }); }} className="bg-destructive text-destructive-foreground">Desconectar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
         <TabsContent value="whatsapp" className="space-y-6 mt-6">
           <Card className="border-border">
             <CardHeader><CardTitle className="text-lg">WhatsApp</CardTitle></CardHeader>
@@ -362,6 +458,40 @@ const ConfigurarClientePage = () => {
             </div>
           </div>
           <Button onClick={() => setShowResetModal(false)} className="w-full">Fechar</Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Modal */}
+      <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar WhatsApp — {account.name}</DialogTitle>
+            <DialogDescription>Siga os passos para conectar o WhatsApp</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <ol className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex gap-2"><span className="font-semibold text-foreground">1.</span> Abra o WhatsApp no celular do cliente</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">2.</span> Vá em Aparelhos conectados</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">3.</span> Toque em Conectar aparelho</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">4.</span> Escaneie o QR Code abaixo</li>
+            </ol>
+            <div className="flex items-center justify-center p-6 border border-border rounded bg-white">
+              <div className="w-48 h-48 bg-muted rounded flex items-center justify-center">
+                <QrCode className="w-16 h-16 text-muted-foreground" />
+              </div>
+            </div>
+            <p className="text-xs text-center text-muted-foreground">QR Code atualiza automaticamente a cada 20s</p>
+            <Button
+              onClick={() => {
+                setWhatsappStatus('connected');
+                setShowQrModal(false);
+                toast({ title: 'WhatsApp conectado!' });
+              }}
+              className="w-full gap-2"
+            >
+              ✓ Simular Conexão
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

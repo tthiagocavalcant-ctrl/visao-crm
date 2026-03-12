@@ -11,6 +11,7 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PipelinePage from "@/pages/PipelinePage";
 import ConfiguracoesPage from "@/pages/ConfiguracoesPage";
+import ConversasPage from "@/pages/ConversasPage";
 import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
@@ -30,6 +31,10 @@ const ProtectedRoute = ({ children, requiredPermission }: { children: React.Reac
       return <Navigate to="/pipeline" replace />;
     }
     if (requiredPermission === 'dashboard' && !user.permissions?.dashboard) {
+      toast({ title: 'Você não tem permissão para acessar esta página' });
+      return <Navigate to="/pipeline" replace />;
+    }
+    if (requiredPermission === 'conversas' && !user.permissions?.conversas) {
       toast({ title: 'Você não tem permissão para acessar esta página' });
       return <Navigate to="/pipeline" replace />;
     }
@@ -60,6 +65,7 @@ const AppRoutes = () => (
     <Route path="/" element={<LoginRoute />} />
     <Route path="/dashboard" element={<ProtectedRoute requiredPermission="dashboard"><DashboardPage /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
+    <Route path="/conversas" element={<ProtectedRoute requiredPermission="conversas"><ConversasPage /></ProtectedRoute>} />
     <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="settings"><ConfiguracoesPage /></ProtectedRoute>} />
     <Route path="/admin/clientes" element={<AdminRoute><ClientesPage /></AdminRoute>} />
     <Route path="/admin/clientes/novo" element={<AdminRoute><NovoClientePage /></AdminRoute>} />
