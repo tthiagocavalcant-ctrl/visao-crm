@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 const allNavItems = [
   { label: 'Início', icon: Home, href: '/dashboard', permission: 'dashboard' as const },
   { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline', permission: 'pipeline' as const },
+  { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 
