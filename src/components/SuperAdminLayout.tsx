@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, UserPlus, LogOut } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Users, UserPlus, LogOut, Sun, Moon } from 'lucide-react';
 
 const navItems = [
   { label: 'Clientes', icon: Users, href: '/admin/clientes' },
@@ -10,6 +11,7 @@ const navItems = [
 
 const SuperAdminLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,8 +25,8 @@ const SuperAdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <aside className="w-[220px] bg-sidebar flex flex-col shrink-0 border-r border-sidebar-border">
+    <div className="min-h-screen flex">
+      <aside className="w-[220px] glass-sidebar flex flex-col shrink-0">
         <div className="h-12 flex items-center px-4 border-b border-sidebar-border">
           <div className="w-8 h-8 rounded bg-destructive flex items-center justify-center text-destructive-foreground text-xs font-bold mr-2.5">
             S
@@ -39,7 +41,7 @@ const SuperAdminLayout = ({ children }: { children: ReactNode }) => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${
+                className={`flex items-center gap-2.5 px-4 py-2 text-sm ${
                   active
                     ? 'sidebar-item-active font-medium'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-[3px] border-transparent'
@@ -64,7 +66,7 @@ const SuperAdminLayout = ({ children }: { children: ReactNode }) => {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive w-full transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive w-full"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sair</span>
@@ -73,8 +75,15 @@ const SuperAdminLayout = ({ children }: { children: ReactNode }) => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-12 bg-sidebar border-b border-border flex items-center px-6 shrink-0">
+        <header className="h-12 glass-topbar flex items-center justify-between px-6 shrink-0">
           <span className="text-base font-semibold text-foreground">{pageTitle}</span>
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+            title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </header>
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>

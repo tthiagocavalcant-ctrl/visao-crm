@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppLayout from "@/components/AppLayout";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import LoginPage from "@/pages/LoginPage";
@@ -23,7 +24,6 @@ const ProtectedRoute = ({ children, requiredPermission }: { children: React.Reac
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.role === 'ADMIN_GERAL') return <Navigate to="/admin/clientes" replace />;
 
-  // FUNCIONARIO permission checks
   if (user?.role === 'FUNCIONARIO') {
     if (requiredPermission === 'settings') {
       toast({ title: 'Você não tem permissão para acessar esta página' });
@@ -70,15 +70,17 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
