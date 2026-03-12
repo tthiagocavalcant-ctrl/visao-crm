@@ -158,7 +158,96 @@ const ConfigurarClientePage = () => {
           </Card>
         </TabsContent>
 
-        {/* TAB: WhatsApp & Forms */}
+        {/* TAB: WhatsApp Config (Evolution API) */}
+        <TabsContent value="whatsappConfig" className="space-y-6 mt-6">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Smartphone className="w-5 h-5" /> Conexão Evolution API
+              </CardTitle>
+              <CardDescription>Configure a API Evolution para integração com o WhatsApp deste cliente</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Evolution API URL</Label>
+                <Input value={evolutionUrl} onChange={e => setEvolutionUrl(e.target.value)} placeholder="https://evolution.example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Evolution API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={evolutionKey}
+                    onChange={e => setEvolutionKey(e.target.value)}
+                    placeholder="Sua API Key"
+                  />
+                  <Button variant="outline" size="sm" onClick={() => setShowApiKey(!showApiKey)} className="shrink-0">
+                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Instance Name</Label>
+                <Input value={evolutionInstance} onChange={e => setEvolutionInstance(e.target.value)} placeholder="instance-name" />
+              </div>
+              <Button onClick={() => handleSave('WhatsApp Config')} className="w-full gap-2">💾 Salvar Configuração</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">Status da Conexão</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${
+                  whatsappStatus === 'connected' ? 'bg-success' :
+                  whatsappStatus === 'connecting' ? 'bg-warning animate-pulse' :
+                  'bg-destructive'
+                }`} />
+                <span className="text-sm font-medium text-foreground">
+                  {whatsappStatus === 'connected' ? 'Conectado' :
+                   whatsappStatus === 'connecting' ? 'Conectando...' :
+                   'Desconectado'}
+                </span>
+              </div>
+              {whatsappStatus === 'connected' && (
+                <p className="text-xs text-muted-foreground">Última conexão: 12/03/2026 às 14:30</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQrModal(true)}
+                  disabled={!evolutionUrl || !evolutionKey || !evolutionInstance}
+                  className="gap-2"
+                >
+                  <QrCode className="w-4 h-4" /> Gerar QR Code
+                </Button>
+                {whatsappStatus === 'connected' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="gap-2">
+                        <Unplug className="w-4 h-4" /> Desconectar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Desconectar WhatsApp</AlertDialogTitle>
+                        <AlertDialogDescription>O cliente perderá a conexão com o WhatsApp e não poderá enviar/receber mensagens até reconectar.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setWhatsappStatus('disconnected'); toast({ title: 'WhatsApp desconectado' }); }} className="bg-destructive text-destructive-foreground">Desconectar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
         <TabsContent value="whatsapp" className="space-y-6 mt-6">
           <Card className="border-border">
             <CardHeader><CardTitle className="text-lg">WhatsApp</CardTitle></CardHeader>
