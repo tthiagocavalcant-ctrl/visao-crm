@@ -88,15 +88,18 @@ const PipelinePage = () => {
                         )}
                       </div>
 
-                      <a
-                        href={`https://wa.me/${lead.phone}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          let phone = lead.phone.replace(/\D/g, '');
+                          if (!phone.startsWith('55')) phone = '55' + phone;
+                          window.open(`https://wa.me/${phone}`, '_blank', 'noopener,noreferrer');
+                        }}
                         className="flex items-center justify-center gap-2 w-full bg-success/20 hover:bg-success/30 text-success text-xs font-medium py-2 rounded-md transition-colors"
                       >
                         <MessageCircle className="w-3.5 h-3.5" /> Chamar no WhatsApp
-                      </a>
+                      </button>
                     </div>
                   ))
                 )}
