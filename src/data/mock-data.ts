@@ -184,7 +184,7 @@ export const mockEmployees: Employee[] = [
   {
     id: 'emp-1', account_id: 'acc-1', name: 'Ana Vendedora', email: 'func@empresa.com',
     role: 'FUNCIONARIO', cargo: 'Vendedora',
-    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false },
+    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false, conversas: false },
     active: true, created_at: '2024-03-01T10:00:00',
   },
 ];
