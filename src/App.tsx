@@ -14,13 +14,27 @@ import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
 import NotFound from "./pages/NotFound.tsx";
+import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children, requiredPermission }: { children: React.ReactNode; requiredPermission?: string }) => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.role === 'ADMIN_GERAL') return <Navigate to="/admin/clientes" replace />;
+
+  // FUNCIONARIO permission checks
+  if (user?.role === 'FUNCIONARIO') {
+    if (requiredPermission === 'settings') {
+      toast({ title: 'Você não tem permissão para acessar esta página' });
+      return <Navigate to="/pipeline" replace />;
+    }
+    if (requiredPermission === 'dashboard' && !user.permissions?.dashboard) {
+      toast({ title: 'Você não tem permissão para acessar esta página' });
+      return <Navigate to="/pipeline" replace />;
+    }
+  }
+
   return <AppLayout>{children}</AppLayout>;
 };
 
@@ -35,6 +49,7 @@ const LoginRoute = () => {
   const { isAuthenticated, user } = useAuth();
   if (isAuthenticated) {
     if (user?.role === 'ADMIN_GERAL') return <Navigate to="/admin/clientes" replace />;
+    if (user?.role === 'FUNCIONARIO') return <Navigate to="/pipeline" replace />;
     return <Navigate to="/dashboard" replace />;
   }
   return <LoginPage />;
@@ -43,11 +58,9 @@ const LoginRoute = () => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<LoginRoute />} />
-    {/* Client routes */}
-    <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute requiredPermission="dashboard"><DashboardPage /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
-    <Route path="/configuracoes" element={<ProtectedRoute><ConfiguracoesPage /></ProtectedRoute>} />
-    {/* Super Admin routes */}
+    <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="settings"><ConfiguracoesPage /></ProtectedRoute>} />
     <Route path="/admin/clientes" element={<AdminRoute><ClientesPage /></AdminRoute>} />
     <Route path="/admin/clientes/novo" element={<AdminRoute><NovoClientePage /></AdminRoute>} />
     <Route path="/admin/clientes/:id/configurar" element={<AdminRoute><ConfigurarClientePage /></AdminRoute>} />

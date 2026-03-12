@@ -32,12 +32,24 @@ export interface Lead {
   created_at: string;
 }
 
+export interface EmployeePermissions {
+  pipeline: boolean;
+  dashboard: boolean;
+  export_leads: boolean;
+  delete_leads: boolean;
+  manage_statuses: boolean;
+}
+
 export interface Employee {
   id: string;
   account_id: string;
   name: string;
   email: string;
-  role: 'admin' | 'viewer';
+  role: string;
+  cargo: string;
+  permissions: EmployeePermissions;
+  active: boolean;
+  created_at: string;
 }
 
 export interface Unit {
@@ -45,6 +57,12 @@ export interface Unit {
   account_id: string;
   name: string;
   address: string;
+  city: string;
+  state: string;
+  phone: string;
+  responsible: string;
+  status: 'active' | 'inactive';
+  created_at: string;
 }
 
 export interface Interaction {
@@ -55,7 +73,7 @@ export interface Interaction {
   created_at: string;
 }
 
-export type UserRole = 'ADMIN_GERAL' | 'ADMIN';
+export type UserRole = 'ADMIN_GERAL' | 'ADMIN' | 'FUNCIONARIO';
 
 export interface User {
   id: string;
@@ -63,7 +81,17 @@ export interface User {
   name: string;
   role: UserRole;
   account_id?: string;
+  cargo?: string;
+  permissions?: EmployeePermissions;
 }
+
+export const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
+  pipeline: true,
+  dashboard: false,
+  export_leads: false,
+  delete_leads: false,
+  manage_statuses: false,
+};
 
 export const PIPELINE_STATUSES = [
   { id: 'lead', name: 'LEAD', color: 'purple' },
@@ -75,10 +103,20 @@ export const PIPELINE_STATUSES = [
   { id: 'compareceu', name: 'Compareceu', color: 'warning' },
 ];
 
+export const BRAZILIAN_STATES = [
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
+  'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+];
+
 export const mockUsers: User[] = [
   { id: '1', email: 'admin@sistema.com', name: 'Admin Geral', role: 'ADMIN_GERAL' },
   { id: '2', email: 'cliente@empresa.com', name: 'João Silva', role: 'ADMIN', account_id: 'acc-1' },
   { id: '3', email: 'admin@nexstation.com.br', name: 'NexStation', role: 'ADMIN', account_id: 'acc-1' },
+  {
+    id: '4', email: 'func@empresa.com', name: 'Ana Vendedora', role: 'FUNCIONARIO', account_id: 'acc-1',
+    cargo: 'Vendedora',
+    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false },
+  },
 ];
 
 export const mockAccounts: Account[] = [
@@ -138,48 +176,34 @@ export const mockAccounts: Account[] = [
   },
 ];
 
-// Keep backward compat
 export const mockAccount: Account = mockAccounts[0];
+
+export const mockEmployees: Employee[] = [
+  {
+    id: 'emp-1', account_id: 'acc-1', name: 'Ana Vendedora', email: 'func@empresa.com',
+    role: 'FUNCIONARIO', cargo: 'Vendedora',
+    permissions: { pipeline: true, dashboard: false, export_leads: false, delete_leads: false, manage_statuses: false },
+    active: true, created_at: '2024-03-01T10:00:00',
+  },
+];
+
+export const mockUnits: Unit[] = [];
 
 export const mockLeads: Lead[] = [
   {
-    id: 'lead-1',
-    account_id: 'acc-1',
-    name: 'Maria Aparecida',
-    phone: '5511988887777',
-    scheduled_at: '2024-03-12T14:30:00',
-    symptoms: ['Dificuldade de Longe'],
-    interest: 'Sim, tenho interesse',
-    tags: ['Longe'],
-    notes: '',
-    pipeline_status: 'lead',
-    created_at: '2024-03-10T10:00:00',
+    id: 'lead-1', account_id: 'acc-1', name: 'Maria Aparecida', phone: '5511988887777',
+    scheduled_at: '2024-03-12T14:30:00', symptoms: ['Dificuldade de Longe'], interest: 'Sim, tenho interesse',
+    tags: ['Longe'], notes: '', pipeline_status: 'lead', created_at: '2024-03-10T10:00:00',
   },
   {
-    id: 'lead-2',
-    account_id: 'acc-1',
-    name: 'Carlos Eduardo',
-    phone: '5511977776666',
-    scheduled_at: '2024-03-11T10:00:00',
-    symptoms: ['Dor de cabeça'],
-    interest: 'Não, só quero o exame',
-    tags: [],
-    notes: '',
-    pipeline_status: 'agendou',
-    created_at: '2024-03-09T15:00:00',
+    id: 'lead-2', account_id: 'acc-1', name: 'Carlos Eduardo', phone: '5511977776666',
+    scheduled_at: '2024-03-11T10:00:00', symptoms: ['Dor de cabeça'], interest: 'Não, só quero o exame',
+    tags: [], notes: '', pipeline_status: 'agendou', created_at: '2024-03-09T15:00:00',
   },
   {
-    id: 'lead-3',
-    account_id: 'acc-1',
-    name: 'Ana Paula Santos',
-    phone: '5511966665555',
-    scheduled_at: '2024-03-10T16:00:00',
-    symptoms: ['Vista cansada'],
-    interest: 'Sim, tenho interesse',
-    tags: ['Perto'],
-    notes: 'Cliente retorno',
-    pipeline_status: 'confirmado',
-    created_at: '2024-03-08T09:00:00',
+    id: 'lead-3', account_id: 'acc-1', name: 'Ana Paula Santos', phone: '5511966665555',
+    scheduled_at: '2024-03-10T16:00:00', symptoms: ['Vista cansada'], interest: 'Sim, tenho interesse',
+    tags: ['Perto'], notes: 'Cliente retorno', pipeline_status: 'confirmado', created_at: '2024-03-08T09:00:00',
   },
 ];
 
