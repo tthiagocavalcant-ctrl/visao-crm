@@ -9,34 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -121,6 +104,7 @@ const ConfigurarClientePage = () => {
           <TabsTrigger value="dados">Dados da Conta</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp & Forms</TabsTrigger>
           <TabsTrigger value="n8n">N8n / Webhook</TabsTrigger>
+          <TabsTrigger value="pixels">Pixels & Tracking</TabsTrigger>
           <TabsTrigger value="acesso">Acesso</TabsTrigger>
         </TabsList>
 
@@ -170,9 +154,7 @@ const ConfigurarClientePage = () => {
         {/* TAB: WhatsApp & Forms */}
         <TabsContent value="whatsapp" className="space-y-6 mt-6">
           <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">WhatsApp</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">WhatsApp</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Link do WhatsApp</Label>
@@ -180,19 +162,16 @@ const ConfigurarClientePage = () => {
                   <Input value={account.whatsapp_link} onChange={(e) => update('whatsapp_link', e.target.value)} placeholder="https://wa.me/5511999999999" />
                   {account.whatsapp_link && (
                     <Button variant="outline" size="sm" onClick={() => window.open(account.whatsapp_link, '_blank')} className="shrink-0 gap-1">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Testar
+                      <ExternalLink className="w-3.5 h-3.5" /> Testar
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">Formato: https://wa.me/5511999999999</p>
                 <Badge className={account.whatsapp_link ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-muted text-muted-foreground'}>
                   {account.whatsapp_link ? 'Configurado' : 'Não configurado'}
                 </Badge>
               </div>
             </CardContent>
           </Card>
-
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-lg">Formulário de Agendamento</CardTitle>
@@ -220,7 +199,7 @@ const ConfigurarClientePage = () => {
           <Card className="border-border bg-primary/5 border-primary/20">
             <CardContent className="pt-6 space-y-4">
               <p className="text-sm text-foreground font-medium">🔗 Endpoint de Recebimento (N8n → CRM)</p>
-              <p className="text-xs text-muted-foreground">Use esta URL no seu workflow do N8n para enviar leads e atualizar status automaticamente</p>
+              <p className="text-xs text-muted-foreground">Use esta URL no seu workflow do N8n para enviar leads</p>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">URL do Endpoint</Label>
@@ -245,14 +224,12 @@ const ConfigurarClientePage = () => {
           </Card>
 
           <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Webhooks de Saída (CRM → N8n)</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Webhooks de Saída (CRM → N8n)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {[
                 { key: 'n8n_webhook' as const, label: 'Webhook Novo Lead', helper: 'Disparado quando um novo lead é recebido' },
-                { key: 'followup_webhook' as const, label: 'Webhook Follow-Up / Não Compareceu', helper: "Disparado quando lead muda para status 'Não compareceu'" },
-                { key: 'sale_webhook' as const, label: 'Webhook Venda Realizada', helper: "Disparado quando lead muda para status 'Venda realizada'" },
+                { key: 'followup_webhook' as const, label: 'Webhook Follow-Up / Não Compareceu', helper: "Disparado quando lead muda para 'Não compareceu'" },
+                { key: 'sale_webhook' as const, label: 'Webhook Venda Realizada', helper: "Disparado quando lead muda para 'Venda realizada'" },
               ].map((wh) => (
                 <div key={wh.key} className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -261,21 +238,13 @@ const ConfigurarClientePage = () => {
                   </div>
                   <Input value={account[wh.key]} onChange={(e) => update(wh.key, e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
                   <p className="text-xs text-muted-foreground">{wh.helper}</p>
-
                   <Collapsible>
                     <CollapsibleTrigger className="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
-                      <ChevronDown className="w-3 h-3" />
-                      Ver exemplo de payload
+                      <ChevronDown className="w-3 h-3" /> Ver exemplo de payload
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <pre className="bg-background border border-border rounded-lg p-3 mt-2 text-xs font-mono text-muted-foreground overflow-x-auto">
-{JSON.stringify({
-  lead_id: 'uuid-do-lead',
-  account_id: account.id,
-  name: 'Nome do Lead',
-  phone: '5511999999999',
-  status: wh.key === 'n8n_webhook' ? 'LEAD' : wh.key === 'followup_webhook' ? 'Não compareceu' : 'Venda realizada',
-}, null, 2)}
+{JSON.stringify({ lead_id: 'uuid-do-lead', account_id: account.id, name: 'Nome do Lead', phone: '5511999999999', status: wh.key === 'n8n_webhook' ? 'LEAD' : wh.key === 'followup_webhook' ? 'Não compareceu' : 'Venda realizada' }, null, 2)}
                       </pre>
                     </CollapsibleContent>
                   </Collapsible>
@@ -286,28 +255,51 @@ const ConfigurarClientePage = () => {
           <Button onClick={() => handleSave('Webhooks')} className="w-full gap-2">💾 Salvar Webhooks</Button>
         </TabsContent>
 
+        {/* TAB: Pixels & Tracking */}
+        <TabsContent value="pixels" className="space-y-6 mt-6">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">📊 Pixels & Tracking</CardTitle>
+              <CardDescription>Configure os pixels de rastreamento e tags de conversão deste cliente</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Pixel do Facebook</Label>
+                <Input value={account.facebook_pixel} onChange={(e) => update('facebook_pixel', e.target.value)} placeholder="Ex: 123456789012345" />
+                <p className="text-xs text-muted-foreground">ID do pixel do Facebook para rastreamento de conversões</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Tag de Conversão Google Ads</Label>
+                <Input value={account.google_ads_tag} onChange={(e) => update('google_ads_tag', e.target.value)} placeholder="AW-XXXXXXXXX/XXXXXXXXX" />
+                <p className="text-xs text-muted-foreground">Tag de conversão do Google Ads. Formato: AW-XXXXXXXXXX</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Webhook Venda Realizada</Label>
+                <Input value={account.sale_webhook} onChange={(e) => update('sale_webhook', e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
+                <p className="text-xs text-muted-foreground">Disparado quando um lead é marcado como venda</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Button onClick={() => handleSave('Pixels & Tracking')} className="w-full gap-2">💾 Salvar</Button>
+        </TabsContent>
+
         {/* TAB: Acesso */}
         <TabsContent value="acesso" className="space-y-6 mt-6">
           <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Credenciais</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Credenciais</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input value={account.email} readOnly className="opacity-60" />
               </div>
               <Button variant="outline" onClick={handleResetPassword} className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Redefinir Senha
+                <RefreshCw className="w-4 h-4" /> Redefinir Senha
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Sessões Ativas</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Sessões Ativas</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">Último login: 12 de mar. de 2024, 14:30</p>
               <AlertDialog>
@@ -317,13 +309,11 @@ const ConfigurarClientePage = () => {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Revogar acesso</AlertDialogTitle>
-                    <AlertDialogDescription>Isso desativará a conta do cliente imediatamente. O cliente não poderá mais acessar o sistema.</AlertDialogDescription>
+                    <AlertDialogDescription>Isso desativará a conta do cliente imediatamente.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { update('status', 'inactive'); toast({ title: 'Acesso revogado' }); }} className="bg-destructive text-destructive-foreground">
-                      Revogar
-                    </AlertDialogAction>
+                    <AlertDialogAction onClick={() => { update('status', 'inactive'); toast({ title: 'Acesso revogado' }); }} className="bg-destructive text-destructive-foreground">Revogar</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -333,23 +323,16 @@ const ConfigurarClientePage = () => {
           <Card className="border-destructive/50 border-2">
             <CardHeader>
               <CardTitle className="text-lg text-destructive flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Danger Zone
+                <AlertTriangle className="w-5 h-5" /> Danger Zone
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Esta ação é irreversível. Todos os dados do cliente serão permanentemente removidos.
-              </p>
+              <p className="text-sm text-muted-foreground">Esta ação é irreversível. Todos os dados serão permanentemente removidos.</p>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
                   Digite <strong className="text-foreground">{account.name}</strong> para confirmar
                 </Label>
-                <Input
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value)}
-                  placeholder={account.name}
-                />
+                <Input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder={account.name} />
               </div>
               <Button
                 variant="destructive"
@@ -357,8 +340,7 @@ const ConfigurarClientePage = () => {
                 onClick={() => { toast({ title: 'Cliente excluído' }); navigate('/admin/clientes'); }}
                 className="gap-2"
               >
-                <Trash2 className="w-4 h-4" />
-                Excluir Cliente
+                <Trash2 className="w-4 h-4" /> Excluir Cliente
               </Button>
             </CardContent>
           </Card>

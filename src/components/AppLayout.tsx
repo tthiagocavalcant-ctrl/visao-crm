@@ -12,12 +12,12 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline' },
-  { label: 'Configurações', icon: Settings, href: '/configuracoes' },
+const allNavItems = [
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', permission: 'dashboard' as const },
+  { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline', permission: 'pipeline' as const },
+  { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
@@ -25,6 +25,17 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const navItems = useMemo(() => {
+    if (user?.role === 'FUNCIONARIO') {
+      return allNavItems.filter(item => {
+        if (item.permission === 'settings') return false;
+        if (item.permission === 'dashboard') return user.permissions?.dashboard;
+        return true;
+      });
+    }
+    return allNavItems;
+  }, [user]);
 
   const currentNav = navItems.find((n) => location.pathname.startsWith(n.href));
   const breadcrumbs = [
@@ -39,7 +50,6 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
       <aside
         className={`${
           sidebarOpen ? 'w-60' : 'w-16'
@@ -85,7 +95,9 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.role === 'ADMIN_GERAL' ? 'Super Admin' : 'Cliente'}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.role === 'ADMIN_GERAL' ? 'Super Admin' : user?.role === 'FUNCIONARIO' ? (user.cargo || 'Funcionário') : 'Administrador'}
+                </p>
               </div>
             </div>
           )}
@@ -99,9 +111,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="h-14 border-b border-border flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-1 text-sm">
             {breadcrumbs.map((b, i) => (
