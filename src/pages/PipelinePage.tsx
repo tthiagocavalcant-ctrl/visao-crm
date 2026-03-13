@@ -299,8 +299,8 @@ const PipelinePage = () => {
                               <Calendar className="w-3 h-3" /> {new Date(lead.scheduled_at).toLocaleDateString('pt-BR')}
                             </p>
                             <div className="flex flex-wrap gap-1 mb-2">
-                              {lead.symptoms.map((s) => (
-                                <span key={s} className="bg-accent text-accent-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">{s}</span>
+                              {lead.tags.map((t) => (
+                                <span key={t} className="bg-accent text-accent-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">{t}</span>
                               ))}
                             </div>
                             <button type="button" onClick={(e) => {
