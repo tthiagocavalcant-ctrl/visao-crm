@@ -331,7 +331,20 @@ const PipelinePage = () => {
         </DndContext>
       )}
 
-      {selectedLead && <LeadDetailModal lead={selectedLead} onClose={() => setSelectedLead(null)} />}
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onDelete={(leadId) => {
+            setLeads(prev => prev.filter(l => l.id !== leadId));
+            setSelectedLead(null);
+          }}
+          onUpdate={(updatedLead) => {
+            setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+            setSelectedLead(updatedLead);
+          }}
+        />
+      )}
       <ManageStatusModal open={showManageStatus} onClose={() => setShowManageStatus(false)} statuses={statuses} onSave={setStatuses} leadCountByStatus={leadCountByStatus} />
     </div>
   );
