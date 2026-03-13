@@ -18,14 +18,18 @@ export interface Account {
   created_at: string;
 }
 
+export type LeadTemperature = 'frio' | 'morno' | 'quente';
+export type LeadCanal = 'whatsapp' | 'instagram' | 'trafego_pago' | 'google' | 'facebook' | 'indicacao' | 'outro';
+
 export interface Lead {
   id: string;
   account_id: string;
   name: string;
   phone: string;
+  email: string;
   scheduled_at: string;
-  symptoms: string[];
-  interest: string;
+  temperature: LeadTemperature;
+  canal: LeadCanal;
   tags: string[];
   notes: string;
   pipeline_status: string;
