@@ -255,7 +255,7 @@ const PipelinePage = () => {
                     <span className="text-sm font-medium text-foreground truncate">{lead.name}</span>
                     <span className="text-xs text-muted-foreground">{lead.phone}</span>
                     <span className={`status-badge w-fit ${statusColors[status.color] || 'bg-muted text-foreground'}`}>{status.name}</span>
-                    <span className="text-xs text-muted-foreground truncate">{lead.interest || '—'}</span>
+                    <span className="text-xs text-muted-foreground truncate">{lead.canal || '—'}</span>
                     <div className="flex gap-1 overflow-hidden">
                       {lead.tags.slice(0, 2).map(t => <span key={t} className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>)}
                     </div>
