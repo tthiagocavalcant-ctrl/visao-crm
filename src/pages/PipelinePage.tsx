@@ -255,7 +255,7 @@ const PipelinePage = () => {
                     <span className="text-sm font-medium text-foreground truncate">{lead.name}</span>
                     <span className="text-xs text-muted-foreground">{lead.phone}</span>
                     <span className={`status-badge w-fit ${statusColors[status.color] || 'bg-muted text-foreground'}`}>{status.name}</span>
-                    <span className="text-xs text-muted-foreground truncate">{lead.interest || '—'}</span>
+                    <span className="text-xs text-muted-foreground truncate">{lead.canal || '—'}</span>
                     <div className="flex gap-1 overflow-hidden">
                       {lead.tags.slice(0, 2).map(t => <span key={t} className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>)}
                     </div>
@@ -299,8 +299,8 @@ const PipelinePage = () => {
                               <Calendar className="w-3 h-3" /> {new Date(lead.scheduled_at).toLocaleDateString('pt-BR')}
                             </p>
                             <div className="flex flex-wrap gap-1 mb-2">
-                              {lead.symptoms.map((s) => (
-                                <span key={s} className="bg-accent text-accent-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">{s}</span>
+                              {lead.tags.map((t) => (
+                                <span key={t} className="bg-accent text-accent-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">{t}</span>
                               ))}
                             </div>
                             <button type="button" onClick={(e) => {
@@ -331,7 +331,20 @@ const PipelinePage = () => {
         </DndContext>
       )}
 
-      {selectedLead && <LeadDetailModal lead={selectedLead} onClose={() => setSelectedLead(null)} />}
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onDelete={(leadId) => {
+            setLeads(prev => prev.filter(l => l.id !== leadId));
+            setSelectedLead(null);
+          }}
+          onUpdate={(updatedLead) => {
+            setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+            setSelectedLead(updatedLead);
+          }}
+        />
+      )}
       <ManageStatusModal open={showManageStatus} onClose={() => setShowManageStatus(false)} statuses={statuses} onSave={setStatuses} leadCountByStatus={leadCountByStatus} />
     </div>
   );
