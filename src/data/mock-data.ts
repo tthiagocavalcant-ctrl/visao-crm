@@ -289,18 +289,18 @@ export const mockUnits: Unit[] = [];
 
 export const mockLeads: Lead[] = [
   {
-    id: 'lead-1', account_id: 'acc-1', name: 'Maria Aparecida', phone: '5511988887777',
-    scheduled_at: '2024-03-12T14:30:00', symptoms: ['Dificuldade de Longe'], interest: 'Sim, tenho interesse',
+    id: 'lead-1', account_id: 'acc-1', name: 'Maria Aparecida', phone: '5511988887777', email: 'maria@email.com',
+    scheduled_at: '2024-03-12T14:30:00', temperature: 'quente', canal: 'whatsapp',
     tags: ['Longe'], notes: '', pipeline_status: 'lead', created_at: '2024-03-10T10:00:00',
   },
   {
-    id: 'lead-2', account_id: 'acc-1', name: 'Carlos Eduardo', phone: '5511977776666',
-    scheduled_at: '2024-03-11T10:00:00', symptoms: ['Dor de cabeça'], interest: 'Não, só quero o exame',
+    id: 'lead-2', account_id: 'acc-1', name: 'Carlos Eduardo', phone: '5511977776666', email: '',
+    scheduled_at: '2024-03-11T10:00:00', temperature: 'frio', canal: 'instagram',
     tags: [], notes: '', pipeline_status: 'agendou', created_at: '2024-03-09T15:00:00',
   },
   {
-    id: 'lead-3', account_id: 'acc-1', name: 'Ana Paula Santos', phone: '5511966665555',
-    scheduled_at: '2024-03-10T16:00:00', symptoms: ['Vista cansada'], interest: 'Sim, tenho interesse',
+    id: 'lead-3', account_id: 'acc-1', name: 'Ana Paula Santos', phone: '5511966665555', email: 'ana@email.com',
+    scheduled_at: '2024-03-10T16:00:00', temperature: 'morno', canal: 'indicacao',
     tags: ['Perto'], notes: 'Cliente retorno', pipeline_status: 'confirmado', created_at: '2024-03-08T09:00:00',
   },
 ];
