@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +28,18 @@ const ClientesPage = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  useEffect(() => {
+    const debug = async () => {
+      const { data, error } = await supabase.from('accounts').select('*');
+      console.log('ACCOUNTS DATA:', data);
+      console.log('ACCOUNTS ERROR:', error);
+      
+      const { data: session } = await supabase.auth.getSession();
+      console.log('SESSION:', session);
+    };
+    debug();
+  }, []);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
