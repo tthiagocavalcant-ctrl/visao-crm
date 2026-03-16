@@ -15,6 +15,7 @@ const allNavItems = [
   { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
   { label: 'Scripts', icon: MessageSquare, href: '/scripts', permission: 'scripts' as const },
   { label: 'Follow-ups', icon: Zap, href: '/followups', permission: 'followups' as const },
+  { label: 'Contatos', icon: Contact, href: '/contatos', permission: 'contatos' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 
