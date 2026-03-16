@@ -16,21 +16,6 @@ const SetupPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', 'ADMIN_GERAL' as any)
-        .limit(1);
-      if (data && data.length > 0) {
-        navigate('/', { replace: true });
-      } else {
-        setChecking(false);
-      }
-    };
-    checkAdmin();
-  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
