@@ -213,11 +213,42 @@ const ConfigurarClientePage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => handleSave('Dados')} disabled={saveMutation.isPending} className="w-full gap-2">
-                {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Dados'}
-              </Button>
             </CardContent>
           </Card>
+
+          {/* Plano & Limites */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-lg">Plano & Limites</CardTitle>
+              <CardDescription>Defina o plano e o limite de colaboradores deste cliente</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Plano</Label>
+                <Select
+                  value={(account as any).plan || 'basico'}
+                  onValueChange={(v) => {
+                    const maxMap: Record<string, number> = { basico: 3, profissional: 5, enterprise: 10 };
+                    setAccount(p => p ? { ...p, plan: v as any, max_users: maxMap[v] ?? 3 } : p);
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basico">Básico — 3 colaboradores</SelectItem>
+                    <SelectItem value="profissional">Profissional — 5 colaboradores</SelectItem>
+                    <SelectItem value="enterprise">Enterprise — 10 colaboradores</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Este plano permite até <strong className="text-foreground">{(account as any).max_users ?? 3}</strong> colaboradores ativos.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Button onClick={() => handleSave('Dados')} disabled={saveMutation.isPending} className="w-full gap-2">
+            {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Dados'}
+          </Button>
         </TabsContent>
 
         {/* TAB: WhatsApp Config (Evolution API) */}
