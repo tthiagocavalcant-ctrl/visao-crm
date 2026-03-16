@@ -16,6 +16,7 @@ import TarefasPage from "@/pages/TarefasPage";
 import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
+import SetupPage from "@/pages/SetupPage";
 import NotFound from "./pages/NotFound.tsx";
 import { toast } from "@/hooks/use-toast";
 
