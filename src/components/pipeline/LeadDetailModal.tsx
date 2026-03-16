@@ -1,4 +1,3 @@
-import { Lead, LeadTemperature, LeadCanal } from '@/data/mock-data';
 import { X, Trash2, Clock, Check, Plus } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -12,6 +11,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+
+type LeadTemperature = 'frio' | 'morno' | 'quente';
+type LeadCanal = 'whatsapp' | 'instagram' | 'trafego_pago' | 'google' | 'facebook' | 'indicacao' | 'outro';
+
+interface Lead {
+  id: string;
+  account_id: string;
+  name: string;
+  phone: string;
+  email: string;
+  scheduled_at: string;
+  temperature: LeadTemperature;
+  canal: LeadCanal;
+  tags: string[];
+  notes: string;
+  pipeline_status: string;
+  created_at: string;
+  updated_at?: string;
+}
 
 const TEMPERATURE_OPTIONS: { value: LeadTemperature; label: string; emoji: string; activeClass: string; inactiveClass: string }[] = [
   { value: 'frio', label: 'Frio', emoji: '❄️', activeClass: 'bg-blue-500 text-white', inactiveClass: 'border border-blue-400 text-blue-400 hover:bg-blue-500/10' },
@@ -40,11 +58,11 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
   const [name, setName] = useState(lead.name);
   const [phone, setPhone] = useState(lead.phone);
   const [email, setEmail] = useState(lead.email || '');
-  const [notes, setNotes] = useState(lead.notes);
-  const [temperature, setTemperature] = useState<LeadTemperature>(lead.temperature);
-  const [canal, setCanal] = useState<LeadCanal>(lead.canal);
-  const [tags, setTags] = useState<string[]>([...lead.tags]);
-  const [scheduledAt, setScheduledAt] = useState(lead.scheduled_at.slice(0, 16));
+  const [notes, setNotes] = useState(lead.notes || '');
+  const [temperature, setTemperature] = useState<LeadTemperature>(lead.temperature || 'frio');
+  const [canal, setCanal] = useState<LeadCanal>(lead.canal || 'outro');
+  const [tags, setTags] = useState<string[]>([...(lead.tags || [])]);
+  const [scheduledAt, setScheduledAt] = useState(lead.scheduled_at ? lead.scheduled_at.slice(0, 16) : '');
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [addingTag, setAddingTag] = useState(false);
@@ -76,22 +94,16 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
       scheduled_at: scheduledAt,
     };
     onUpdate?.(updatedLead);
-    toast({ title: 'Lead atualizado com sucesso' });
   };
 
   const handleDelete = () => {
     onDelete?.(lead.id);
-    onClose();
-    toast({ title: 'Lead excluído com sucesso' });
   };
 
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
-        <div
-          className="glass-card border border-border rounded-md w-full max-w-lg max-h-[85vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="glass-card border border-border rounded-md w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-3 border-b border-border">
             <div>
@@ -131,18 +143,13 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
                 className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
 
-            {/* Temperatura do Lead */}
+            {/* Temperatura */}
             <div>
               <label className="block text-label text-muted-foreground mb-2">Temperatura do Lead</label>
               <div className="flex gap-2">
                 {TEMPERATURE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setTemperature(opt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      temperature === opt.value ? opt.activeClass : opt.inactiveClass
-                    }`}
-                  >
+                  <button key={opt.value} onClick={() => setTemperature(opt.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${temperature === opt.value ? opt.activeClass : opt.inactiveClass}`}>
                     {opt.emoji} {opt.label}
                   </button>
                 ))}
@@ -154,15 +161,8 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
               <label className="block text-label text-muted-foreground mb-2">Canal</label>
               <div className="flex flex-wrap gap-1.5">
                 {CANAL_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setCanal(opt.value)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-                      canal === opt.value
-                        ? 'bg-primary text-primary-foreground'
-                        : 'border border-border text-muted-foreground hover:bg-accent'
-                    }`}
-                  >
+                  <button key={opt.value} onClick={() => setCanal(opt.value)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${canal === opt.value ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground hover:bg-accent'}`}>
                     {opt.emoji} {opt.label}
                   </button>
                 ))}
@@ -181,20 +181,11 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
                 ))}
                 {addingTag ? (
                   <div className="flex items-center gap-1">
-                    <input
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddTag();
-                        if (e.key === 'Escape') { setAddingTag(false); setNewTag(''); }
-                      }}
-                      autoFocus
-                      placeholder="Nova tag..."
-                      className="bg-input border border-border rounded px-2 py-0.5 text-[11px] text-foreground w-24 focus:outline-none focus:border-primary"
-                    />
-                    <button onClick={handleAddTag} className="text-primary hover:text-primary/80">
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
+                    <input value={newTag} onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(); if (e.key === 'Escape') { setAddingTag(false); setNewTag(''); } }}
+                      autoFocus placeholder="Nova tag..."
+                      className="bg-input border border-border rounded px-2 py-0.5 text-[11px] text-foreground w-24 focus:outline-none focus:border-primary" />
+                    <button onClick={handleAddTag} className="text-primary hover:text-primary/80"><Check className="w-3.5 h-3.5" /></button>
                   </div>
                 ) : (
                   tags.length < 10 && (
@@ -208,8 +199,7 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
 
             <div>
               <label className="block text-label text-muted-foreground mb-1">Observações</label>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                placeholder="Adicione observações..."
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Adicione observações..."
                 className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary min-h-[70px] resize-none" />
             </div>
 
@@ -222,31 +212,23 @@ const LeadDetailModal = ({ lead, onClose, onDelete, onUpdate }: Props) => {
               </div>
             </div>
 
-            {/* Save button */}
-            <button
-              onClick={handleSave}
-              className="w-full bg-primary text-primary-foreground text-sm font-medium py-2.5 rounded hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-            >
+            <button onClick={handleSave}
+              className="w-full bg-primary text-primary-foreground text-sm font-medium py-2.5 rounded hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
               💾 Salvar Alterações
             </button>
           </div>
         </div>
       </div>
 
-      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir lead</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
