@@ -44,6 +44,8 @@ const NovoClientePage = () => {
     status: true,
     whatsappLink: '',
     timezone: 'America/Sao_Paulo',
+    plan: 'basico' as string,
+    max_users: 3,
     permissions: { dashboard: true, pipeline: true, settings: true, reports: false },
   });
 
@@ -86,7 +88,9 @@ const NovoClientePage = () => {
           whatsapp_link: form.whatsappLink || null,
           timezone: form.timezone,
           permissions: form.permissions,
-        })
+          plan: form.plan,
+          max_users: form.max_users,
+        } as any)
         .select()
         .single();
 
@@ -209,6 +213,26 @@ const NovoClientePage = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Plano</Label>
+            <Select
+              value={form.plan}
+              onValueChange={(v) => {
+                const maxMap: Record<string, number> = { basico: 3, profissional: 5, enterprise: 10 };
+                setForm(p => ({ ...p, plan: v, max_users: maxMap[v] ?? 3 }));
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basico">Básico — 3 colaboradores</SelectItem>
+                <SelectItem value="profissional">Profissional — 5 colaboradores</SelectItem>
+                <SelectItem value="enterprise">Enterprise — 10 colaboradores</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Este plano permite até <strong className="text-foreground">{form.max_users}</strong> colaboradores ativos.
+            </p>
           </div>
         </CardContent>
       </Card>
