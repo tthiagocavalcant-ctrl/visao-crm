@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import { mockLeads, Lead } from '@/data/mock-data';
-import { User, Phone, Calendar, MessageCircle, Download, Settings, Users, List, Kanban as KanbanIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { User, Phone, Calendar, MessageCircle, Download, Settings, Users, List, Kanban as KanbanIcon, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import LeadDetailModal from '@/components/pipeline/LeadDetailModal';
 import ManageStatusModal, { PipelineStatus } from '@/components/pipeline/ManageStatusModal';
 import { toast } from '@/hooks/use-toast';
@@ -10,7 +12,25 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+
+// Types
+interface Lead {
+  id: string;
+  account_id: string;
+  name: string;
+  phone: string;
+  email: string;
+  scheduled_at: string;
+  temperature: 'frio' | 'morno' | 'quente';
+  canal: 'whatsapp' | 'instagram' | 'trafego_pago' | 'google' | 'facebook' | 'indicacao' | 'outro';
+  tags: string[];
+  notes: string;
+  pipeline_status: string;
+  created_at: string;
+  updated_at?: string;
+}
 
 const INITIAL_STATUSES: PipelineStatus[] = [
   { id: 'lead', name: 'LEAD', color: 'purple', visible: true },
@@ -52,6 +72,16 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
 ];
 
+const CANAL_OPTIONS = [
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'trafego_pago', label: 'Tráfego Pago' },
+  { value: 'google', label: 'Google' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'indicacao', label: 'Indicação' },
+  { value: 'outro', label: 'Outro' },
+];
+
 function getDateRange(period: PeriodFilter): { start: Date | null; end: Date | null } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -90,10 +120,10 @@ function exportLeadsCSV(leads: Lead[], statuses: PipelineStatus[]) {
   if (leads.length === 0) { toast({ title: 'Nenhum lead para exportar' }); return; }
   toast({ title: 'Exportando leads...' });
   const statusMap = Object.fromEntries(statuses.map(s => [s.id, s.name]));
-  const header = 'Nome;Telefone;Email;Status;Temperatura;Origem;Data do Agendamento;Tags;Observações;Data de Criação';
+  const header = 'Nome;Telefone;Email;Status;Temperatura;Canal;Data do Agendamento;Tags;Observações;Data de Criação';
   const fmtDate = (d: string) => { try { return format(new Date(d), 'dd/MM/yyyy HH:mm'); } catch { return d; } };
   const rows = leads.map(l =>
-    [l.name, l.phone, '', statusMap[l.pipeline_status] || l.pipeline_status, '', '', fmtDate(l.scheduled_at), l.tags.join(', '), l.notes, fmtDate(l.created_at)].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(';')
+    [l.name, l.phone, l.email || '', statusMap[l.pipeline_status] || l.pipeline_status, l.temperature || '', l.canal || '', l.scheduled_at ? fmtDate(l.scheduled_at) : '', (l.tags || []).join(', '), l.notes || '', fmtDate(l.created_at)].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(';')
   );
   const bom = '\uFEFF';
   const csv = bom + header + '\n' + rows.join('\n');
@@ -105,20 +135,173 @@ function exportLeadsCSV(leads: Lead[], statuses: PipelineStatus[]) {
   toast({ title: `${leads.length} leads exportados com sucesso` });
 }
 
+// New Lead Modal
+function NewLeadModal({ open, onClose, accountId }: { open: boolean; onClose: () => void; accountId: string }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [canal, setCanal] = useState('outro');
+  const [temperature, setTemperature] = useState('frio');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim() || !phone.trim()) {
+      toast({ title: 'Preencha nome e telefone', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('leads').insert({
+      name: name.trim(),
+      phone: phone.trim(),
+      canal,
+      temperature,
+      account_id: accountId,
+      pipeline_status: 'lead',
+    } as any);
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Erro ao criar lead', description: error.message, variant: 'destructive' });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['leads', accountId] });
+    toast({ title: 'Lead criado com sucesso' });
+    setName(''); setPhone(''); setCanal('outro'); setTemperature('frio');
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Novo Lead</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">Nome *</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary" placeholder="Nome do lead" />
+          </div>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">Telefone *</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)}
+              className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary" placeholder="5511999999999" />
+          </div>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">Canal</label>
+            <select value={canal} onChange={e => setCanal(e.target.value)}
+              className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary">
+              {CANAL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">Temperatura</label>
+            <select value={temperature} onChange={e => setTemperature(e.target.value)}
+              className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary">
+              <option value="frio">❄️ Frio</option>
+              <option value="morno">🔥 Morno</option>
+              <option value="quente">🔴 Quente</option>
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'Salvando...' : 'Criar Lead'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const PipelinePage = () => {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const accountId = user?.account_id || '';
+
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [statuses, setStatuses] = useState<PipelineStatus[]>(INITIAL_STATUSES);
   const [showManageStatus, setShowManageStatus] = useState(false);
+  const [showNewLead, setShowNewLead] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [period, setPeriod] = useState<PeriodFilter>('all');
   const [customStart, setCustomStart] = useState<Date | undefined>();
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Fetch leads
+  const { data: leads = [], isLoading: leadsLoading } = useQuery({
+    queryKey: ['leads', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('account_id', accountId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as Lead[];
+    },
+    enabled: !!accountId,
+  });
+
+  // Fetch pipeline statuses
+  const { data: statuses = INITIAL_STATUSES } = useQuery({
+    queryKey: ['pipeline_statuses', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pipeline_statuses')
+        .select('*')
+        .eq('account_id', accountId)
+        .order('position');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        // Seed default statuses
+        const toInsert = INITIAL_STATUSES.map((s, i) => ({
+          account_id: accountId,
+          slug: s.id,
+          name: s.name,
+          color: s.color,
+          visible: s.visible,
+          position: i,
+        }));
+        await supabase.from('pipeline_statuses').insert(toInsert as any);
+        return INITIAL_STATUSES;
+      }
+      return data.map((s: any) => ({ id: s.slug, name: s.name, color: s.color, visible: s.visible })) as PipelineStatus[];
+    },
+    enabled: !!accountId,
+  });
+
+  // Move lead mutation
+  const moveLeadMutation = useMutation({
+    mutationFn: async ({ leadId, newStatus }: { leadId: string; newStatus: string }) => {
+      const { error } = await supabase.from('leads').update({ pipeline_status: newStatus } as any).eq('id', leadId);
+      if (error) throw error;
+    },
+    onError: (_err, _vars) => {
+      queryClient.invalidateQueries({ queryKey: ['leads', accountId] });
+      toast({ title: 'Erro ao mover lead', variant: 'destructive' });
+    },
+  });
+
+  // Save statuses
+  const saveStatuses = useCallback(async (newStatuses: PipelineStatus[]) => {
+    const toUpsert = newStatuses.map((s, i) => ({
+      account_id: accountId,
+      slug: s.id,
+      name: s.name,
+      color: s.color,
+      visible: s.visible,
+      position: i,
+    }));
+    const { error } = await supabase.from('pipeline_statuses').upsert(toUpsert as any, { onConflict: 'account_id,slug' });
+    if (error) {
+      toast({ title: 'Erro ao salvar statuses', variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['pipeline_statuses', accountId] });
+    }
+  }, [accountId, queryClient]);
+
+  // Filtering
   const filteredLeads = useMemo(() => {
     if (period === 'all') return leads;
     if (period === 'custom') {
@@ -153,15 +336,25 @@ const PipelinePage = () => {
     const lead = leads.find(l => l.id === leadId);
     if (!lead || lead.pipeline_status === newStatus) return;
     const statusName = statuses.find(s => s.id === newStatus)?.name || newStatus;
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, pipeline_status: newStatus } : l));
+    // Optimistic update via invalidation after mutation
+    moveLeadMutation.mutate({ leadId, newStatus });
+    queryClient.setQueryData(['leads', accountId], (old: Lead[] | undefined) =>
+      (old || []).map(l => l.id === leadId ? { ...l, pipeline_status: newStatus } : l)
+    );
     toast({ title: `Lead movido para ${statusName}` });
-  }, [leads, statuses]);
+  }, [leads, statuses, moveLeadMutation, queryClient, accountId]);
 
   const draggedLead = activeDragId ? leads.find(l => l.id === activeDragId) : null;
 
-  // List view collapsed groups
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
+
+  if (leadsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-muted-foreground">Carregando leads...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -216,6 +409,10 @@ const PipelinePage = () => {
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <Users className="w-3.5 h-3.5" /> {filteredLeads.length} leads
           </span>
+
+          <Button variant="default" size="sm" className="gap-1 text-xs" onClick={() => setShowNewLead(true)}>
+            <Plus className="w-3.5 h-3.5" /> Novo Lead
+          </Button>
           <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => exportLeadsCSV(filteredLeads, statuses)}>
             <Download className="w-3.5 h-3.5" /> Exportar
           </Button>
@@ -228,21 +425,14 @@ const PipelinePage = () => {
       {/* LIST VIEW */}
       {viewMode === 'list' && (
         <div className="border border-border rounded overflow-hidden">
-          {/* Table header */}
           <div className="grid grid-cols-[1fr_130px_140px_110px_100px_120px] bg-accent h-9 items-center px-4 text-label uppercase text-muted-foreground border-b border-border">
-            <span>Nome</span>
-            <span>Telefone</span>
-            <span>Status</span>
-            <span>Origem</span>
-            <span>Tags</span>
-            <span>Agendamento</span>
+            <span>Nome</span><span>Telefone</span><span>Status</span><span>Origem</span><span>Tags</span><span>Agendamento</span>
           </div>
           {visibleStatuses.map(status => {
             const groupLeads = filteredLeads.filter(l => l.pipeline_status === status.id);
             const collapsed = collapsedGroups[status.id];
             return (
               <div key={status.id}>
-                {/* Group header */}
                 <button onClick={() => toggleGroup(status.id)} className="w-full flex items-center gap-2 h-9 px-4 bg-muted border-b border-border hover:bg-accent transition-colors">
                   {collapsed ? <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
                   <span className={`w-2 h-2 rounded-full ${statusDotColors[status.color] || 'bg-muted-foreground'}`} />
@@ -257,9 +447,9 @@ const PipelinePage = () => {
                     <span className={`status-badge w-fit ${statusColors[status.color] || 'bg-muted text-foreground'}`}>{status.name}</span>
                     <span className="text-xs text-muted-foreground truncate">{lead.canal || '—'}</span>
                     <div className="flex gap-1 overflow-hidden">
-                      {lead.tags.slice(0, 2).map(t => <span key={t} className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>)}
+                      {(lead.tags || []).slice(0, 2).map(t => <span key={t} className="text-[10px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>)}
                     </div>
-                    <span className="text-xs text-muted-foreground">{new Date(lead.scheduled_at).toLocaleDateString('pt-BR')}</span>
+                    <span className="text-xs text-muted-foreground">{lead.scheduled_at ? new Date(lead.scheduled_at).toLocaleDateString('pt-BR') : '—'}</span>
                   </div>
                 ))}
               </div>
@@ -295,11 +485,13 @@ const PipelinePage = () => {
                             <p className="text-[11px] text-primary flex items-center gap-1 mb-1.5">
                               <Phone className="w-3 h-3" /> {lead.phone}
                             </p>
-                            <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-2">
-                              <Calendar className="w-3 h-3" /> {new Date(lead.scheduled_at).toLocaleDateString('pt-BR')}
-                            </p>
+                            {lead.scheduled_at && (
+                              <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-2">
+                                <Calendar className="w-3 h-3" /> {new Date(lead.scheduled_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
                             <div className="flex flex-wrap gap-1 mb-2">
-                              {lead.tags.map((t) => (
+                              {(lead.tags || []).map((t) => (
                                 <span key={t} className="bg-accent text-accent-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">{t}</span>
                               ))}
                             </div>
@@ -335,17 +527,47 @@ const PipelinePage = () => {
         <LeadDetailModal
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
-          onDelete={(leadId) => {
-            setLeads(prev => prev.filter(l => l.id !== leadId));
+          onDelete={async (leadId) => {
+            const { error } = await supabase.from('leads').delete().eq('id', leadId);
+            if (error) {
+              toast({ title: 'Erro ao excluir lead', variant: 'destructive' });
+              return;
+            }
+            queryClient.invalidateQueries({ queryKey: ['leads', accountId] });
             setSelectedLead(null);
+            toast({ title: 'Lead excluído com sucesso' });
           }}
-          onUpdate={(updatedLead) => {
-            setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+          onUpdate={async (updatedLead) => {
+            const { error } = await supabase.from('leads').update({
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+              email: updatedLead.email,
+              notes: updatedLead.notes,
+              temperature: updatedLead.temperature,
+              canal: updatedLead.canal,
+              tags: updatedLead.tags,
+              scheduled_at: updatedLead.scheduled_at || null,
+            } as any).eq('id', updatedLead.id);
+            if (error) {
+              toast({ title: 'Erro ao atualizar lead', variant: 'destructive' });
+              return;
+            }
+            queryClient.invalidateQueries({ queryKey: ['leads', accountId] });
             setSelectedLead(updatedLead);
+            toast({ title: 'Lead atualizado com sucesso' });
           }}
         />
       )}
-      <ManageStatusModal open={showManageStatus} onClose={() => setShowManageStatus(false)} statuses={statuses} onSave={setStatuses} leadCountByStatus={leadCountByStatus} />
+
+      <ManageStatusModal
+        open={showManageStatus}
+        onClose={() => setShowManageStatus(false)}
+        statuses={statuses}
+        onSave={(newStatuses) => saveStatuses(newStatuses)}
+        leadCountByStatus={leadCountByStatus}
+      />
+
+      <NewLeadModal open={showNewLead} onClose={() => setShowNewLead(false)} accountId={accountId} />
     </div>
   );
 };
