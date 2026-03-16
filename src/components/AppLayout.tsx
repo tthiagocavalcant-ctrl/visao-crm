@@ -14,6 +14,7 @@ const allNavItems = [
   { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', permission: 'tarefas' as const },
   { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
   { label: 'Scripts', icon: MessageSquare, href: '/scripts', permission: 'scripts' as const },
+  { label: 'Follow-ups', icon: Zap, href: '/followups', permission: 'followups' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 
