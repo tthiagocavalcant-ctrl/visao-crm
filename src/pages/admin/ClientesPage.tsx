@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,34 +29,6 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => {
-    const debug = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('USER ID:', session?.user?.id);
-      console.log('USER EMAIL:', session?.user?.email);
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, role, account_id')
-        .eq('id', session?.user?.id!)
-        .single();
-      console.log('PROFILE ROLE:', profile?.role);
-      console.log('PROFILE ERROR:', profileError?.message);
-
-      const { data: accounts, error: accountsError } = await supabase
-        .from('accounts')
-        .select('*');
-      console.log('ACCOUNTS COUNT:', accounts?.length);
-      console.log('ACCOUNTS ERROR:', accountsError?.message);
-
-      const { data: allAccounts, error: allError } = await supabase
-        .from('accounts')
-        .select('count');
-      console.log('ALL ACCOUNTS RAW:', allAccounts);
-      console.log('ALL ERROR:', allError?.message);
-    };
-    debug();
-  }, []);
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
@@ -65,8 +37,6 @@ const ClientesPage = () => {
         .from('accounts')
         .select('*')
         .order('created_at', { ascending: false });
-      console.log('accounts data:', data);
-      console.log('accounts error:', error);
       if (error) throw error;
       return data;
     },
@@ -101,25 +71,6 @@ const ClientesPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-          <p className="text-muted-foreground text-sm mt-1">Gerencie todos os clientes da plataforma</p>
-          <button
-            onClick={async () => {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session) return alert('Sem sessão');
-              const { error } = await supabase
-                .from('profiles')
-                .update({ role: 'ADMIN_GERAL' as any, account_id: null })
-                .eq('id', session.user.id);
-              if (error) {
-                alert('Erro: ' + error.message);
-              } else {
-                alert('Role atualizado! Faça logout e login novamente.');
-              }
-            }}
-            style={{ background: 'red', color: 'white', padding: '8px 16px', marginBottom: '16px' }}
-          >
-            FIX: Tornar ADMIN_GERAL
-          </button>
         </div>
         <Button onClick={() => navigate('/admin/clientes/novo')} className="gap-2">
           <Plus className="w-4 h-4" />

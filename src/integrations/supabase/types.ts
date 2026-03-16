@@ -38,6 +38,7 @@ export type Database = {
           status: Database["public"]["Enums"]["account_status"] | null
           timezone: string | null
           whatsapp_link: string | null
+          whatsapp_status: string | null
         }
         Insert: {
           api_key?: string | null
@@ -62,6 +63,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["account_status"] | null
           timezone?: string | null
           whatsapp_link?: string | null
+          whatsapp_status?: string | null
         }
         Update: {
           api_key?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["account_status"] | null
           timezone?: string | null
           whatsapp_link?: string | null
+          whatsapp_status?: string | null
         }
         Relationships: []
       }
