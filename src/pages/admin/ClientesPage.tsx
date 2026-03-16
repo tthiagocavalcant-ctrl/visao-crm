@@ -85,6 +85,24 @@ const ClientesPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie todos os clientes da plataforma</p>
+          <button
+            onClick={async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session) return alert('Sem sessão');
+              const { error } = await supabase
+                .from('profiles')
+                .update({ role: 'ADMIN_GERAL' as any, account_id: null })
+                .eq('id', session.user.id);
+              if (error) {
+                alert('Erro: ' + error.message);
+              } else {
+                alert('Role atualizado! Faça logout e login novamente.');
+              }
+            }}
+            style={{ background: 'red', color: 'white', padding: '8px 16px', marginBottom: '16px' }}
+          >
+            FIX: Tornar ADMIN_GERAL
+          </button>
         </div>
         <Button onClick={() => navigate('/admin/clientes/novo')} className="gap-2">
           <Plus className="w-4 h-4" />
