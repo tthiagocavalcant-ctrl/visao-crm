@@ -18,6 +18,7 @@ import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
 import ScriptsPage from "@/pages/ScriptsPage";
 import FollowUpsPage from "@/pages/FollowUpsPage";
+import ContatosPage from "@/pages/ContatosPage";
 import SetupPage from "@/pages/SetupPage";
 import NotFound from "./pages/NotFound.tsx";
 import { toast } from "@/hooks/use-toast";
