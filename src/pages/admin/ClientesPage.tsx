@@ -36,6 +36,8 @@ const ClientesPage = () => {
         .from('accounts')
         .select('*')
         .order('created_at', { ascending: false });
+      console.log('accounts data:', data);
+      console.log('accounts error:', error);
       if (error) throw error;
       return data;
     },
