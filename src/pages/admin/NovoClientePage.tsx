@@ -44,6 +44,8 @@ const NovoClientePage = () => {
     status: true,
     whatsappLink: '',
     timezone: 'America/Sao_Paulo',
+    plan: 'basico' as string,
+    max_users: 3,
     permissions: { dashboard: true, pipeline: true, settings: true, reports: false },
   });
 
