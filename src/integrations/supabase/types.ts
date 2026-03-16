@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -162,21 +162,21 @@ export type Database = {
       followup_configs: {
         Row: {
           account_id: string
-          active: boolean
+          active: boolean | null
           created_at: string | null
           id: string
           pipeline_status: string
         }
         Insert: {
           account_id: string
-          active?: boolean
+          active?: boolean | null
           created_at?: string | null
           id?: string
           pipeline_status: string
         }
         Update: {
           account_id?: string
-          active?: boolean
+          active?: boolean | null
           created_at?: string | null
           id?: string
           pipeline_status?: string
@@ -195,34 +195,34 @@ export type Database = {
         Row: {
           account_id: string
           created_at: string | null
-          delay_minutes: number
+          delay_minutes: number | null
           followup_config_id: string
           id: string
           media_type: string | null
           media_url: string | null
-          message: string
+          message: string | null
           position: number | null
         }
         Insert: {
           account_id: string
           created_at?: string | null
-          delay_minutes?: number
+          delay_minutes?: number | null
           followup_config_id: string
           id?: string
           media_type?: string | null
           media_url?: string | null
-          message?: string
+          message?: string | null
           position?: number | null
         }
         Update: {
           account_id?: string
           created_at?: string | null
-          delay_minutes?: number
+          delay_minutes?: number | null
           followup_config_id?: string
           id?: string
           media_type?: string | null
           media_url?: string | null
-          message?: string
+          message?: string | null
           position?: number | null
         }
         Relationships: [
@@ -305,7 +305,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
-          content?: string
+          content: string
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -325,6 +325,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -350,7 +357,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
-          content?: string
+          content: string
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -376,6 +383,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_reminders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
