@@ -31,12 +31,29 @@ const ClientesPage = () => {
 
   useEffect(() => {
     const debug = async () => {
-      const { data, error } = await supabase.from('accounts').select('*');
-      console.log('ACCOUNTS DATA:', data);
-      console.log('ACCOUNTS ERROR:', error);
-      
-      const { data: session } = await supabase.auth.getSession();
-      console.log('SESSION:', session);
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('USER ID:', session?.user?.id);
+      console.log('USER EMAIL:', session?.user?.email);
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, role, account_id')
+        .eq('id', session?.user?.id!)
+        .single();
+      console.log('PROFILE ROLE:', profile?.role);
+      console.log('PROFILE ERROR:', profileError?.message);
+
+      const { data: accounts, error: accountsError } = await supabase
+        .from('accounts')
+        .select('*');
+      console.log('ACCOUNTS COUNT:', accounts?.length);
+      console.log('ACCOUNTS ERROR:', accountsError?.message);
+
+      const { data: allAccounts, error: allError } = await supabase
+        .from('accounts')
+        .select('count');
+      console.log('ALL ACCOUNTS RAW:', allAccounts);
+      console.log('ALL ERROR:', allError?.message);
     };
     debug();
   }, []);
