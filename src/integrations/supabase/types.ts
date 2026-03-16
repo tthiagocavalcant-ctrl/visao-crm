@@ -27,10 +27,12 @@ export type Database = {
           google_ads_tag: string | null
           id: string
           logo_url: string | null
+          max_users: number | null
           n8n_webhook: string | null
           name: string
           permissions: Json | null
           phone: string | null
+          plan: Database["public"]["Enums"]["plan_type"] | null
           responsible_name: string | null
           sale_webhook: string | null
           status: Database["public"]["Enums"]["account_status"] | null
@@ -49,10 +51,12 @@ export type Database = {
           google_ads_tag?: string | null
           id?: string
           logo_url?: string | null
+          max_users?: number | null
           n8n_webhook?: string | null
           name: string
           permissions?: Json | null
           phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_type"] | null
           responsible_name?: string | null
           sale_webhook?: string | null
           status?: Database["public"]["Enums"]["account_status"] | null
@@ -71,10 +75,12 @@ export type Database = {
           google_ads_tag?: string | null
           id?: string
           logo_url?: string | null
+          max_users?: number | null
           n8n_webhook?: string | null
           name?: string
           permissions?: Json | null
           phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_type"] | null
           responsible_name?: string | null
           sale_webhook?: string | null
           status?: Database["public"]["Enums"]["account_status"] | null
@@ -729,6 +735,7 @@ export type Database = {
       message_direction: "inbound" | "outbound"
       message_status: "sent" | "delivered" | "read"
       message_type: "text" | "image" | "audio" | "document" | "system"
+      plan_type: "basico" | "profissional" | "enterprise"
       project_status: "active" | "completed" | "archived"
       task_priority: "alta" | "media" | "baixa"
       task_status: "a_fazer" | "em_andamento" | "concluido"
@@ -875,6 +882,7 @@ export const Constants = {
       message_direction: ["inbound", "outbound"],
       message_status: ["sent", "delivered", "read"],
       message_type: ["text", "image", "audio", "document", "system"],
+      plan_type: ["basico", "profissional", "enterprise"],
       project_status: ["active", "completed", "archived"],
       task_priority: ["alta", "media", "baixa"],
       task_status: ["a_fazer", "em_andamento", "concluido"],
