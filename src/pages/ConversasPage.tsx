@@ -27,6 +27,7 @@ const ConversasPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'groups'>('all');
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [pendingMediaUrl, setPendingMediaUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
