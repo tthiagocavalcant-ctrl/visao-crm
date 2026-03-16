@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +50,7 @@ const NovoClientePage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const update = (field: string, value: any) => setForm((p) => ({ ...p, [field]: value }));
   const updatePerm = (key: string, val: boolean) =>
@@ -66,13 +68,51 @@ const NovoClientePage = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.companyName || !form.email || !form.password) {
       toast({ title: 'Preencha os campos obrigatórios', variant: 'destructive' });
       return;
     }
-    toast({ title: 'Cliente criado com sucesso!' });
-    setShowCredentials(true);
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from('accounts')
+        .insert({
+          name: form.companyName,
+          email: form.email,
+          responsible_name: form.responsibleName,
+          phone: form.phone,
+          status: form.status ? 'active' as const : 'inactive' as const,
+          whatsapp_link: form.whatsappLink || null,
+          timezone: form.timezone,
+          permissions: form.permissions,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        toast({ title: 'Erro ao criar cliente', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      // Create admin user for this account
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: { data: { name: form.responsibleName || form.companyName, role: 'ADMIN', account_id: data.id } },
+      });
+
+      if (signUpError) {
+        await supabase.from('accounts').delete().eq('id', data.id);
+        toast({ title: 'Erro ao criar usuário', description: signUpError.message, variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Cliente criado com sucesso!' });
+      setShowCredentials(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -203,9 +243,9 @@ const NovoClientePage = () => {
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 pb-8">
         <Button variant="ghost" onClick={() => navigate('/admin/clientes')}>Cancelar</Button>
-        <Button onClick={handleSubmit} className="gap-2">
+        <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
           <Check className="w-4 h-4" />
-          Criar Cliente
+          {submitting ? 'Criando...' : 'Criar Cliente'}
         </Button>
       </div>
 
