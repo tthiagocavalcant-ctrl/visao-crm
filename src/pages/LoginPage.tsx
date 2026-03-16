@@ -12,14 +12,18 @@ const LoginPage = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = login(email, password);
+    setSubmitting(true);
+    const success = await login(email, password);
+    setSubmitting(false);
     if (success) {
       navigate('/dashboard');
     } else {
-      setError('Credenciais inválidas. Tente: admin@sistema.com ou cliente@empresa.com');
+      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
     }
   };
 
