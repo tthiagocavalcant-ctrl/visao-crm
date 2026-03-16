@@ -27,6 +27,7 @@ const ConversasPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'groups'>('all');
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [pendingMediaUrl, setPendingMediaUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +61,22 @@ const ConversasPage = () => {
       return data as Message[];
     },
     enabled: !!activeConversation,
+  });
+
+  // ── Fetch favorite scripts ──
+  const { data: favoriteScripts = [] } = useQuery({
+    queryKey: ['scripts-favorites', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scripts')
+        .select('id, title, content, media_url, media_type')
+        .eq('account_id', accountId!)
+        .eq('is_favorite', true)
+        .order('title');
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!accountId,
   });
 
   // ── Realtime subscription for new messages ──
@@ -492,6 +509,37 @@ const ConversasPage = () => {
                 </button>
               )}
             </div>
+
+            {/* Favorite scripts bar */}
+            {favoriteScripts.length > 0 && (
+              <div className="flex items-center gap-1.5 px-4 py-1.5 border-t border-border overflow-x-auto shrink-0">
+                <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                {favoriteScripts.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      setMessageInput(s.content ?? '');
+                      if (s.media_url) setPendingMediaUrl(s.media_url);
+                      else setPendingMediaUrl(null);
+                    }}
+                    className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-accent text-accent-foreground hover:bg-primary/20 hover:text-primary transition-colors whitespace-nowrap"
+                  >
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Pending media indicator */}
+            {pendingMediaUrl && (
+              <div className="flex items-center gap-2 px-4 py-1 border-t border-border bg-accent/30 shrink-0">
+                <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground truncate flex-1">Mídia anexada</span>
+                <button onClick={() => setPendingMediaUrl(null)} className="text-muted-foreground hover:text-destructive">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Message input */}
             <div className="h-[60px] flex items-center gap-2 px-4 border-t border-border glass-topbar shrink-0">

@@ -16,6 +16,7 @@ import TarefasPage from "@/pages/TarefasPage";
 import ClientesPage from "@/pages/admin/ClientesPage";
 import NovoClientePage from "@/pages/admin/NovoClientePage";
 import ConfigurarClientePage from "@/pages/admin/ConfigurarClientePage";
+import ScriptsPage from "@/pages/ScriptsPage";
 import SetupPage from "@/pages/SetupPage";
 import NotFound from "./pages/NotFound.tsx";
 import { toast } from "@/hooks/use-toast";
@@ -73,6 +74,7 @@ const AppRoutes = () => (
     <Route path="/pipeline" element={<ProtectedRoute><PipelinePage /></ProtectedRoute>} />
     <Route path="/conversas" element={<ProtectedRoute requiredPermission="conversas"><ConversasPage /></ProtectedRoute>} />
     <Route path="/tarefas" element={<ProtectedRoute><TarefasPage /></ProtectedRoute>} />
+    <Route path="/scripts" element={<ProtectedRoute><ScriptsPage /></ProtectedRoute>} />
     <Route path="/configuracoes" element={<ProtectedRoute requiredPermission="settings"><ConfiguracoesPage /></ProtectedRoute>} />
     <Route path="/admin/clientes" element={<AdminRoute><ClientesPage /></AdminRoute>} />
     <Route path="/admin/clientes/novo" element={<AdminRoute><NovoClientePage /></AdminRoute>} />
