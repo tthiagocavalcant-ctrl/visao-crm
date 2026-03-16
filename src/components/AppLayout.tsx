@@ -13,6 +13,7 @@ const allNavItems = [
   { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline', permission: 'pipeline' as const },
   { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', permission: 'tarefas' as const },
   { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
+  { label: 'Scripts', icon: MessageSquare, href: '/scripts', permission: 'scripts' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 
