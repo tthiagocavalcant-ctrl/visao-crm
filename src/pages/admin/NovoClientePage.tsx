@@ -88,7 +88,9 @@ const NovoClientePage = () => {
           whatsapp_link: form.whatsappLink || null,
           timezone: form.timezone,
           permissions: form.permissions,
-        })
+          plan: form.plan,
+          max_users: form.max_users,
+        } as any)
         .select()
         .single();
 
