@@ -22,7 +22,8 @@ import { toast } from "@/hooks/use-toast";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children, requiredPermission }: { children: React.ReactNode; requiredPermission?: string }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.role === 'ADMIN_GERAL') return <Navigate to="/admin/clientes" replace />;
 
@@ -45,14 +46,16 @@ const ProtectedRoute = ({ children, requiredPermission }: { children: React.Reac
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (user?.role !== 'ADMIN_GERAL') return <Navigate to="/dashboard" replace />;
   return <SuperAdminLayout>{children}</SuperAdminLayout>;
 };
 
 const LoginRoute = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return null;
   if (isAuthenticated) {
     if (user?.role === 'ADMIN_GERAL') return <Navigate to="/admin/clientes" replace />;
     if (user?.role === 'FUNCIONARIO') return <Navigate to="/pipeline" replace />;
