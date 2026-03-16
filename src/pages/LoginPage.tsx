@@ -18,12 +18,17 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const success = await login(email, password);
-    setSubmitting(false);
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError('E-mail ou senha incorretos.');
+      }
+    } catch {
+      setError('Erro ao conectar. Tente novamente.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -76,17 +81,12 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/85 text-primary-foreground font-medium py-2 rounded text-[13px]"
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary/85 text-primary-foreground font-medium py-2 rounded text-[13px] disabled:opacity-60"
             >
-              Entrar
+              {submitting ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
-
-          <div className="mt-4 pt-3 border-t border-border">
-            <p className="text-[11px] text-muted-foreground text-center">
-              Demo: <strong>admin@sistema.com</strong> (Super Admin) ou <strong>cliente@empresa.com</strong> (Cliente)
-            </p>
-          </div>
         </div>
       </div>
     </div>
