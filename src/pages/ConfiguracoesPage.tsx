@@ -6,8 +6,10 @@ import { Tables } from '@/integrations/supabase/types';
 import { BRAZILIAN_STATES } from '@/data/mock-data';
 import {
   Copy, Building2, Users, Upload, Plus, Pencil, Trash2, Eye, EyeOff, RefreshCw,
-  Kanban, LayoutDashboard, Download, Shield,
+  Kanban, LayoutDashboard, Download, Shield, AlertCircle,
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
