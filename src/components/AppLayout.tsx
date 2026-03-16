@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
-  Home, CheckSquare, MessageCircle, Kanban, Settings, LogOut, Sun, Moon, Users,
+  Home, CheckSquare, MessageCircle, MessageSquare, Kanban, Settings, LogOut, Sun, Moon, Users,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
