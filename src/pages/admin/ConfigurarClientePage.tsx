@@ -120,7 +120,9 @@ const ConfigurarClientePage = () => {
       evolution_url: account.evolution_url,
       evolution_key: account.evolution_key,
       evolution_instance: account.evolution_instance,
-    });
+      plan: (account as any).plan,
+      max_users: (account as any).max_users,
+    } as any);
     toast({ title: `${section} salvo com sucesso!` });
   };
 

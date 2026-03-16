@@ -427,14 +427,62 @@ const EquipeTab = () => {
 
   const copyText = (text: string) => { navigator.clipboard.writeText(text); toast({ title: 'Copiado!' }); };
 
+  // ── Account plan info ──
+  const { data: accountInfo } = useQuery({
+    queryKey: ['account-plan', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('max_users, plan')
+        .eq('id', accountId!)
+        .single();
+      if (error) throw error;
+      return data as { max_users: number | null; plan: string | null };
+    },
+    enabled: !!accountId,
+  });
+
+  const activeEmployees = employees.filter(e => e.active).length;
+  const maxUsers = (accountInfo as any)?.max_users ?? 3;
+  const planLabel = { basico: 'Básico', profissional: 'Profissional', enterprise: 'Enterprise' }[(accountInfo as any)?.plan ?? 'basico'] ?? 'Básico';
+  const limitReached = activeEmployees >= maxUsers;
+  const usagePercent = maxUsers > 0 ? Math.min((activeEmployees / maxUsers) * 100, 100) : 0;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">Equipe — {employees.length} membros</span>
+      {/* Plan usage bar */}
+      <div className="bg-card border border-border rounded p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
+              Colaboradores: {activeEmployees} / {maxUsers}
+            </span>
+            <span className="text-xs text-muted-foreground">|</span>
+            <Badge variant="secondary" className="text-xs">{planLabel}</Badge>
+          </div>
+          {limitReached ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" className="gap-1 opacity-50 cursor-not-allowed" disabled>
+                  👤 Novo Funcionário
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Limite de colaboradores atingido.<br />Entre em contato com o administrador para fazer upgrade.</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button onClick={openCreate} size="sm" className="gap-1">👤 Novo Funcionário</Button>
+          )}
         </div>
-        <Button onClick={openCreate} size="sm" className="gap-1">👤 Novo Funcionário</Button>
+        <Progress value={usagePercent} className="h-2" />
+        {limitReached && (
+          <div className="flex items-center gap-1.5 text-xs text-warning">
+            <AlertCircle className="w-3.5 h-3.5" />
+            Limite atingido. Entre em contato com o administrador para upgrade.
+          </div>
+        )}
       </div>
 
       {employees.length === 0 ? (
