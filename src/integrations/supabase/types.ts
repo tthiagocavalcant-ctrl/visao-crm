@@ -294,12 +294,107 @@ export type Database = {
           },
         ]
       }
+      lead_notes: {
+        Row: {
+          account_id: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          lead_id: string
+        }
+        Insert: {
+          account_id: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id: string
+        }
+        Update: {
+          account_id?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_reminders: {
+        Row: {
+          account_id: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          lead_id: string
+          scheduled_at: string
+          status: string
+          type: string
+        }
+        Insert: {
+          account_id: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id: string
+          scheduled_at: string
+          status?: string
+          type?: string
+        }
+        Update: {
+          account_id?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id?: string
+          scheduled_at?: string
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_reminders_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_reminders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           account_id: string
           canal: Database["public"]["Enums"]["lead_canal"] | null
+          cargo: string | null
           created_at: string | null
           email: string | null
+          empresa: string | null
           id: string
           name: string
           notes: string | null
@@ -313,8 +408,10 @@ export type Database = {
         Insert: {
           account_id: string
           canal?: Database["public"]["Enums"]["lead_canal"] | null
+          cargo?: string | null
           created_at?: string | null
           email?: string | null
+          empresa?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -328,8 +425,10 @@ export type Database = {
         Update: {
           account_id?: string
           canal?: Database["public"]["Enums"]["lead_canal"] | null
+          cargo?: string | null
           created_at?: string | null
           email?: string | null
+          empresa?: string | null
           id?: string
           name?: string
           notes?: string | null
