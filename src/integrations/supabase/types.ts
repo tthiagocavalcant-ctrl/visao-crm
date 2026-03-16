@@ -448,6 +448,95 @@ export type Database = {
           },
         ]
       }
+      script_categories: {
+        Row: {
+          account_id: string
+          color: string
+          created_at: string | null
+          id: string
+          name: string
+          position: number | null
+        }
+        Insert: {
+          account_id: string
+          color?: string
+          created_at?: string | null
+          id?: string
+          name: string
+          position?: number | null
+        }
+        Update: {
+          account_id?: string
+          color?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "script_categories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scripts: {
+        Row: {
+          account_id: string
+          category_id: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          is_favorite: boolean | null
+          media_type: string | null
+          media_url: string | null
+          position: number | null
+          title: string
+        }
+        Insert: {
+          account_id: string
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          position?: number | null
+          title: string
+        }
+        Update: {
+          account_id?: string
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          position?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scripts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scripts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "script_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_activities: {
         Row: {
           action: string
