@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { mockConversations, mockMessages, mockLeads, Conversation, Message } from '@/data/mock-data';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tables } from '@/integrations/supabase/types';
 import {
   Search, Filter, MessageSquarePlus, Phone, MoreVertical, Smile, Paperclip, Mic, Send,
   ArrowDown, X, FileText, Play, Image as ImageIcon, CheckCheck, Check as CheckIcon
@@ -10,11 +12,16 @@ import { Input } from '@/components/ui/input';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+
+type Conversation = Tables<'conversations'>;
+type Message = Tables<'messages'>;
 
 const ConversasPage = () => {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const queryClient = useQueryClient();
+  const accountId = user?.account_id;
+
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,10 +30,115 @@ const ConversasPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const whatsappConnected = true; // mock: controlled by super admin
+  const whatsappConnected = true;
+
+  // ── Fetch conversations ──
+  const { data: conversations = [] } = useQuery({
+    queryKey: ['conversations', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('account_id', accountId!)
+        .order('last_message_at', { ascending: false });
+      if (error) throw error;
+      return data as Conversation[];
+    },
+    enabled: !!accountId,
+  });
+
+  // ── Fetch messages for active conversation ──
+  const { data: activeMessages = [] } = useQuery({
+    queryKey: ['messages', activeConversation],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', activeConversation!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as Message[];
+    },
+    enabled: !!activeConversation,
+  });
+
+  // ── Realtime subscription for new messages ──
+  useEffect(() => {
+    if (!accountId) return;
+    const channel = supabase
+      .channel('messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `account_id=eq.${accountId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as Message;
+          // Refresh messages if it's the active conversation
+          queryClient.invalidateQueries({ queryKey: ['messages', newMsg.conversation_id] });
+          // Refresh conversations list to update last_message etc.
+          queryClient.invalidateQueries({ queryKey: ['conversations', accountId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [accountId, queryClient]);
+
+  // ── Send message mutation ──
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!activeConversation || !accountId || !user) throw new Error('Missing context');
+
+      const { error: msgError } = await supabase.from('messages').insert({
+        conversation_id: activeConversation,
+        account_id: accountId,
+        content,
+        message_type: 'text',
+        direction: 'outbound',
+        status: 'sent',
+        sent_by: user.id,
+      });
+      if (msgError) throw msgError;
+
+      const { error: convError } = await supabase
+        .from('conversations')
+        .update({
+          last_message: content,
+          last_message_at: new Date().toISOString(),
+          unread_count: 0,
+        })
+        .eq('id', activeConversation);
+      if (convError) throw convError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', activeConversation] });
+      queryClient.invalidateQueries({ queryKey: ['conversations', accountId] });
+    },
+    onError: () => {
+      toast.error('Erro ao enviar mensagem');
+    },
+  });
+
+  // ── Clear unread mutation ──
+  const clearUnreadMutation = useMutation({
+    mutationFn: async (convId: string) => {
+      await supabase
+        .from('conversations')
+        .update({ unread_count: 0 })
+        .eq('id', convId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations', accountId] });
+    },
+  });
 
   const activeConv = conversations.find(c => c.id === activeConversation);
-  const activeMessages = messages.filter(m => m.conversation_id === activeConversation);
 
   const filteredConversations = useMemo(() => {
     let list = conversations;
@@ -34,15 +146,11 @@ const ConversasPage = () => {
       const q = searchQuery.toLowerCase();
       list = list.filter(c => c.contact_name.toLowerCase().includes(q) || c.contact_phone.includes(q));
     }
-    if (filterTab === 'unread') list = list.filter(c => c.unread_count > 0);
-    return list.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+    if (filterTab === 'unread') list = list.filter(c => (c.unread_count ?? 0) > 0);
+    return list;
   }, [conversations, searchQuery, filterTab]);
 
-  const unreadTotal = conversations.reduce((sum, c) => sum + c.unread_count, 0);
-
-  const matchedLead = activeConv
-    ? mockLeads.find(l => l.phone === activeConv.contact_phone)
-    : null;
+  const unreadTotal = conversations.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,23 +168,7 @@ const ConversasPage = () => {
 
   const handleSend = () => {
     if (!messageInput.trim() || !activeConversation) return;
-    const newMsg: Message = {
-      id: `msg-${Date.now()}`,
-      conversation_id: activeConversation,
-      account_id: user?.account_id || 'acc-1',
-      content: messageInput.trim(),
-      message_type: 'text',
-      direction: 'outbound',
-      status: 'sent',
-      sent_by: user?.id,
-      created_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, newMsg]);
-    setConversations(prev => prev.map(c =>
-      c.id === activeConversation
-        ? { ...c, last_message: messageInput.trim(), last_message_at: new Date().toISOString(), unread_count: 0 }
-        : c
-    ));
+    sendMessageMutation.mutate(messageInput.trim());
     setMessageInput('');
   };
 
@@ -89,7 +181,10 @@ const ConversasPage = () => {
 
   const selectConversation = (id: string) => {
     setActiveConversation(id);
-    setConversations(prev => prev.map(c => c.id === id ? { ...c, unread_count: 0 } : c));
+    const conv = conversations.find(c => c.id === id);
+    if (conv && (conv.unread_count ?? 0) > 0) {
+      clearUnreadMutation.mutate(id);
+    }
   };
 
   const formatTime = (date: string) => {
@@ -125,10 +220,10 @@ const ConversasPage = () => {
     const groups: { date: string; messages: Message[] }[] = [];
     let currentDate = '';
     activeMessages.forEach(msg => {
-      const msgDate = new Date(msg.created_at).toDateString();
+      const msgDate = new Date(msg.created_at!).toDateString();
       if (msgDate !== currentDate) {
         currentDate = msgDate;
-        groups.push({ date: msg.created_at, messages: [msg] });
+        groups.push({ date: msg.created_at!, messages: [msg] });
       } else {
         groups[groups.length - 1].messages.push(msg);
       }
@@ -212,7 +307,7 @@ const ConversasPage = () => {
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-border/50 ${
                   activeConversation === conv.id
                     ? 'bg-primary/10'
-                    : conv.unread_count > 0
+                    : (conv.unread_count ?? 0) > 0
                     ? 'bg-accent/5 hover:bg-accent/10'
                     : 'hover:bg-accent/5'
                 }`}
@@ -230,18 +325,18 @@ const ConversasPage = () => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className={`text-sm truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
+                    <span className={`text-sm truncate ${(conv.unread_count ?? 0) > 0 ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
                       {conv.contact_name}
                     </span>
                     <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
-                      {formatTime(conv.last_message_at)}
+                      {conv.last_message_at ? formatTime(conv.last_message_at) : ''}
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
                     <p className="text-xs text-muted-foreground truncate flex-1">
                       {conv.last_message}
                     </p>
-                    {conv.unread_count > 0 && (
+                    {(conv.unread_count ?? 0) > 0 && (
                       <span className="ml-2 shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] rounded-full bg-success text-white font-bold">
                         {conv.unread_count}
                       </span>
@@ -257,7 +352,6 @@ const ConversasPage = () => {
       {/* RIGHT PANEL */}
       <div className="flex-1 flex flex-col min-w-0">
         {!whatsappConnected ? (
-          /* State 1: Not connected */
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-4">
               <Phone className="w-10 h-10 text-success" />
@@ -268,7 +362,6 @@ const ConversasPage = () => {
             </p>
           </div>
         ) : !activeConv ? (
-          /* State 2: No conversation selected */
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <MessageSquarePlus className="w-10 h-10 text-primary" />
@@ -281,7 +374,6 @@ const ConversasPage = () => {
             </div>
           </div>
         ) : (
-          /* State 3: Conversation open */
           <>
             {/* Chat header */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-border glass-topbar shrink-0">
@@ -297,9 +389,6 @@ const ConversasPage = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">{activeConv.contact_name}</span>
-                    {matchedLead && (
-                      <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] px-1.5 py-0">CRM</Badge>
-                    )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">{activeConv.contact_phone}</p>
                 </div>
@@ -333,7 +422,6 @@ const ConversasPage = () => {
             >
               {groupedMessages.map((group, gi) => (
                 <div key={gi}>
-                  {/* Date divider */}
                   <div className="flex items-center justify-center my-3">
                     <span className="text-[11px] text-muted-foreground bg-card px-3 py-1 rounded-full border border-border">
                       {formatDateDivider(group.date)}
@@ -383,8 +471,8 @@ const ConversasPage = () => {
                           <>
                             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                             <div className={`flex items-center gap-1 mt-1 ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                              <span className="text-[10px] text-muted-foreground/70">{formatTime(msg.created_at)}</span>
-                              {msg.direction === 'outbound' && <StatusIcon status={msg.status} />}
+                              <span className="text-[10px] text-muted-foreground/70">{formatTime(msg.created_at!)}</span>
+                              {msg.direction === 'outbound' && <StatusIcon status={msg.status ?? 'sent'} />}
                             </div>
                           </>
                         )}
@@ -395,7 +483,6 @@ const ConversasPage = () => {
               ))}
               <div ref={messagesEndRef} />
 
-              {/* Scroll to bottom */}
               {showScrollBottom && (
                 <button
                   onClick={scrollToBottom}
@@ -424,7 +511,8 @@ const ConversasPage = () => {
               {messageInput.trim() ? (
                 <button
                   onClick={handleSend}
-                  className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 hover:opacity-90"
+                  disabled={sendMessageMutation.isPending}
+                  className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 hover:opacity-90 disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                 </button>
