@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { mockAccount, mockEmployees, mockUnits, BRAZILIAN_TIMEZONES, BRAZILIAN_STATES, DEFAULT_EMPLOYEE_PERMISSIONS, Employee, EmployeePermissions, Unit } from '@/data/mock-data';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tables } from '@/integrations/supabase/types';
+import { BRAZILIAN_STATES } from '@/data/mock-data';
 import {
   Copy, Building2, Users, Upload, Plus, Pencil, Trash2, Eye, EyeOff, RefreshCw,
   Kanban, LayoutDashboard, Download, Shield,
@@ -15,11 +19,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
+type Account = Tables<'accounts'>;
+type Profile = Tables<'profiles'>;
+type Unit = Tables<'units'>;
+
+interface EmployeePermissions {
+  pipeline: boolean;
+  dashboard: boolean;
+  export_leads: boolean;
+  delete_leads: boolean;
+  manage_statuses: boolean;
+  conversas: boolean;
+}
+
+const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
+  pipeline: true, dashboard: false, export_leads: false,
+  delete_leads: false, manage_statuses: false, conversas: false,
+};
+
 const tabs = ['Empresa', 'Unidades', 'Equipe'];
 
 const ConfiguracoesPage = () => {
+  const { user } = useAuth();
+  const accountId = user?.account_id;
   const [activeTab, setActiveTab] = useState('Empresa');
-  const [account] = useState(mockAccount);
+
+  const { data: account } = useQuery({
+    queryKey: ['my-account', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('accounts').select('*').eq('id', accountId!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId,
+  });
 
   return (
     <div className="space-y-5">
@@ -44,74 +77,123 @@ const ConfiguracoesPage = () => {
         ))}
       </div>
 
-      {activeTab === 'Empresa' && <EmpresaTab account={account} />}
+      {activeTab === 'Empresa' && account && <EmpresaTab account={account} />}
       {activeTab === 'Unidades' && <UnidadesTab />}
       {activeTab === 'Equipe' && <EquipeTab />}
     </div>
   );
 };
 
-const EmpresaTab = ({ account }: { account: typeof mockAccount }) => (
-  <div className="space-y-4">
-    <div className="bg-card border border-border rounded p-4 space-y-3">
-      <div>
-        <h3 className="text-section-title uppercase text-muted-foreground">Informações da Empresa</h3>
-      </div>
-      <div>
-        <label className="block text-label text-muted-foreground mb-1">Nome da Empresa</label>
-        <Input defaultValue={account.name} />
-      </div>
-      <div>
-        <label className="block text-label text-muted-foreground mb-1">Logo da Empresa</label>
-        <div className="border border-dashed border-border rounded p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-          <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-          <p className="text-xs text-muted-foreground">Clique ou arraste para enviar</p>
+const EmpresaTab = ({ account }: { account: Account }) => {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(account.name);
+  const [whatsappLink, setWhatsappLink] = useState(account.whatsapp_link || '');
+  const [timezone, setTimezone] = useState(account.timezone || 'America/Sao_Paulo');
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('accounts').update({ name, whatsapp_link: whatsappLink, timezone }).eq('id', account.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-account'] });
+      toast({ title: 'Configurações salvas!' });
+    },
+    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card border border-border rounded p-4 space-y-3">
+        <div><h3 className="text-section-title uppercase text-muted-foreground">Informações da Empresa</h3></div>
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Nome da Empresa</label>
+          <Input value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Logo da Empresa</label>
+          <div className="border border-dashed border-border rounded p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+            <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">Clique ou arraste para enviar</p>
+          </div>
+        </div>
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Link do WhatsApp</label>
+          <Input value={whatsappLink} onChange={e => setWhatsappLink(e.target.value)} placeholder="https://wa.me/5511900000000" />
+        </div>
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Fuso Horário</label>
+          <Input value={timezone} onChange={e => setTimezone(e.target.value)} />
         </div>
       </div>
-      <div>
-        <label className="block text-label text-muted-foreground mb-1">Link do WhatsApp</label>
-        <Input defaultValue={account.whatsapp_link} placeholder="https://wa.me/5511900000000" />
-      </div>
-      <div>
-        <label className="block text-label text-muted-foreground mb-1">Fuso Horário</label>
-        <Input defaultValue={account.timezone} />
-      </div>
+      <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-full">
+        {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Configurações'}
+      </Button>
     </div>
-    <Button className="w-full">💾 Salvar Configurações</Button>
-  </div>
-);
+  );
+};
 
 /* ==================== UNIDADES TAB ==================== */
 
-const emptyUnit = (): Omit<Unit, 'id' | 'created_at'> => ({
-  account_id: mockAccount.id, name: '', address: '', city: '', state: '', phone: '', responsible: '', status: 'active',
-});
-
 const UnidadesTab = () => {
-  const [units, setUnits] = useState<Unit[]>(mockUnits);
+  const { user } = useAuth();
+  const accountId = user?.account_id;
+  const queryClient = useQueryClient();
+
+  const { data: units = [] } = useQuery({
+    queryKey: ['units', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('units').select('*').eq('account_id', accountId!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId,
+  });
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [form, setForm] = useState<Omit<Unit, 'id' | 'created_at'>>(emptyUnit());
+  const [form, setForm] = useState({ name: '', address: '', city: '', state: '', phone: '', responsible: '', status: 'active' as 'active' | 'inactive' });
 
-  const openCreate = () => { setEditingUnit(null); setForm(emptyUnit()); setModalOpen(true); };
-  const openEdit = (u: Unit) => { setEditingUnit(u); setForm({ ...u }); setModalOpen(true); };
+  const resetForm = () => setForm({ name: '', address: '', city: '', state: '', phone: '', responsible: '', status: 'active' });
+  const openCreate = () => { setEditingUnit(null); resetForm(); setModalOpen(true); };
+  const openEdit = (u: Unit) => {
+    setEditingUnit(u);
+    setForm({ name: u.name, address: u.address || '', city: u.city || '', state: u.state || '', phone: u.phone || '', responsible: u.responsible || '', status: (u.status as 'active' | 'inactive') || 'active' });
+    setModalOpen(true);
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (editingUnit) {
+        const { error } = await supabase.from('units').update(form).eq('id', editingUnit.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('units').insert({ ...form, account_id: accountId! });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units', accountId] });
+      toast({ title: editingUnit ? 'Unidade atualizada' : 'Unidade criada' });
+      setModalOpen(false);
+    },
+    onError: () => toast({ title: 'Erro ao salvar unidade', variant: 'destructive' }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('units').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units', accountId] });
+      toast({ title: 'Unidade excluída' });
+    },
+  });
 
   const handleSave = () => {
     if (!form.name.trim()) { toast({ title: 'Preencha o nome da unidade', variant: 'destructive' }); return; }
-    if (editingUnit) {
-      setUnits(prev => prev.map(u => u.id === editingUnit.id ? { ...editingUnit, ...form } : u));
-      toast({ title: 'Unidade atualizada com sucesso' });
-    } else {
-      const newUnit: Unit = { ...form, id: `unit-${Date.now()}`, created_at: new Date().toISOString() };
-      setUnits(prev => [...prev, newUnit]);
-      toast({ title: 'Unidade criada com sucesso' });
-    }
-    setModalOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    setUnits(prev => prev.filter(u => u.id !== id));
-    toast({ title: 'Unidade excluída' });
+    saveMutation.mutate();
   };
 
   const activeCount = units.filter(u => u.status === 'active').length;
@@ -157,7 +239,7 @@ const UnidadesTab = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(u.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+                      <AlertDialogAction onClick={() => deleteMutation.mutate(u.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -195,7 +277,7 @@ const UnidadesTab = () => {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>✓ {editingUnit ? 'Salvar' : 'Criar Unidade'}</Button>
+            <Button onClick={handleSave} disabled={saveMutation.isPending}>✓ {editingUnit ? 'Salvar' : 'Criar Unidade'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -229,33 +311,109 @@ const emptyEmployeeForm = (): EmployeeFormState => ({
 });
 
 const EquipeTab = () => {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const { user } = useAuth();
+  const accountId = user?.account_id;
+  const queryClient = useQueryClient();
+
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('account_id', accountId!)
+        .neq('role', 'ADMIN_GERAL');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId,
+  });
+
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Employee | null>(null);
+  const [editing, setEditing] = useState<Profile | null>(null);
   const [form, setForm] = useState<EmployeeFormState>(emptyEmployeeForm());
   const [showCredentials, setShowCredentials] = useState<{ email: string; password: string } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const openCreate = () => { setEditing(null); setForm(emptyEmployeeForm()); setShowPassword(false); setModalOpen(true); };
-  const openEdit = (e: Employee) => {
+  const openEdit = (e: Profile) => {
     setEditing(e);
-    setForm({ name: e.name, email: e.email, password: '', cargo: e.cargo, permissions: { ...e.permissions }, active: e.active });
+    const perms = (e.permissions as any as EmployeePermissions) || { ...DEFAULT_EMPLOYEE_PERMISSIONS };
+    setForm({ name: e.name, email: e.email, password: '', cargo: e.cargo || '', permissions: { ...perms }, active: e.active ?? true });
     setShowPassword(false); setModalOpen(true);
   };
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const { error } = await supabase.from('profiles').update({
+        name: form.name,
+        cargo: form.cargo,
+        permissions: form.permissions as any,
+        active: form.active,
+      }).eq('id', editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees', accountId] });
+      toast({ title: 'Funcionário atualizado' });
+      setModalOpen(false);
+    },
+    onError: () => toast({ title: 'Erro ao atualizar', variant: 'destructive' }),
+  });
+
+  const createEmployeeMutation = useMutation({
+    mutationFn: async () => {
+      // Create auth user via supabase admin (this would need an edge function in production)
+      // For now, we create the profile directly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            name: form.name,
+            role: 'FUNCIONARIO',
+            account_id: accountId,
+          },
+        },
+      });
+      if (authError) throw authError;
+      // Profile is auto-created by handle_new_user trigger
+      // Update permissions
+      if (authData.user) {
+        const { error } = await supabase.from('profiles').update({
+          cargo: form.cargo,
+          permissions: form.permissions as any,
+        }).eq('id', authData.user.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees', accountId] });
+      setModalOpen(false);
+      setShowCredentials({ email: form.email, password: form.password });
+    },
+    onError: (e: any) => toast({ title: e.message || 'Erro ao criar funcionário', variant: 'destructive' }),
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('profiles').update({ active: false }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees', accountId] });
+      toast({ title: 'Acesso do funcionário desativado' });
+    },
+  });
 
   const handleSave = () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: 'Preencha nome e email', variant: 'destructive' }); return; }
     if (!editing && !form.password.trim()) { toast({ title: 'Defina uma senha', variant: 'destructive' }); return; }
     if (editing) {
-      setEmployees(prev => prev.map(e => e.id === editing.id ? { ...e, name: form.name, cargo: form.cargo, permissions: form.permissions, active: form.active } : e));
-      toast({ title: 'Funcionário atualizado com sucesso' }); setModalOpen(false);
+      updateProfileMutation.mutate();
     } else {
-      const newEmp: Employee = {
-        id: `emp-${Date.now()}`, account_id: mockAccount.id, name: form.name, email: form.email,
-        role: 'FUNCIONARIO', cargo: form.cargo, permissions: form.permissions, active: true, created_at: new Date().toISOString(),
-      };
-      setEmployees(prev => [...prev, newEmp]); setModalOpen(false);
-      setShowCredentials({ email: form.email, password: form.password });
+      createEmployeeMutation.mutate();
     }
   };
 
@@ -263,11 +421,6 @@ const EquipeTab = () => {
     const newPw = generatePassword();
     setForm(prev => ({ ...prev, password: newPw })); setShowPassword(true);
     toast({ title: 'Nova senha gerada' });
-  };
-
-  const handleDeactivate = (id: string) => {
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, active: false } : e));
-    toast({ title: 'Acesso do funcionário desativado' });
   };
 
   const copyText = (text: string) => { navigator.clipboard.writeText(text); toast({ title: 'Copiado!' }); };
@@ -290,44 +443,47 @@ const EquipeTab = () => {
         </div>
       ) : (
         <div className="border border-border rounded overflow-hidden">
-          {employees.map((emp, i) => (
-            <div key={emp.id} className={`flex items-center justify-between px-4 h-12 border-b border-border last:border-0 table-row-hover ${i % 2 === 0 ? 'table-row-even' : 'table-row-odd'}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
-                  {emp.name.charAt(0)}
+          {employees.map((emp, i) => {
+            const perms = (emp.permissions as any as EmployeePermissions) || DEFAULT_EMPLOYEE_PERMISSIONS;
+            return (
+              <div key={emp.id} className={`flex items-center justify-between px-4 h-12 border-b border-border last:border-0 table-row-hover ${i % 2 === 0 ? 'table-row-even' : 'table-row-odd'}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[11px] font-bold shrink-0">
+                    {emp.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{emp.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{emp.email}</p>
+                  </div>
+                  {emp.cargo && <span className="text-[11px] bg-accent text-accent-foreground px-2 py-0.5 rounded">{emp.cargo}</span>}
+                  <div className="flex items-center gap-1 ml-1">
+                    {perms.pipeline && <Kanban className="w-3 h-3 text-muted-foreground" />}
+                    {perms.dashboard && <LayoutDashboard className="w-3 h-3 text-muted-foreground" />}
+                    {perms.export_leads && <Download className="w-3 h-3 text-muted-foreground" />}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{emp.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{emp.email}</p>
-                </div>
-                {emp.cargo && <span className="text-[11px] bg-accent text-accent-foreground px-2 py-0.5 rounded">{emp.cargo}</span>}
-                <div className="flex items-center gap-1 ml-1">
-                  {emp.permissions.pipeline && <Kanban className="w-3 h-3 text-muted-foreground" />}
-                  {emp.permissions.dashboard && <LayoutDashboard className="w-3 h-3 text-muted-foreground" />}
-                  {emp.permissions.export_leads && <Download className="w-3 h-3 text-muted-foreground" />}
+                <div className="flex items-center gap-2">
+                  <span className={`status-badge ${emp.active ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {emp.active ? 'Ativo' : 'Inativo'}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(emp)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remover funcionário</AlertDialogTitle>
+                        <AlertDialogDescription>O acesso de "{emp.name}" será desativado.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deactivateMutation.mutate(emp.id)} className="bg-destructive text-destructive-foreground">Remover</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`status-badge ${emp.active ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {emp.active ? 'Ativo' : 'Inativo'}
-                </span>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(emp)}><Pencil className="w-3.5 h-3.5" /></Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button></AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remover funcionário</AlertDialogTitle>
-                      <AlertDialogDescription>O acesso de "{emp.name}" será desativado.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeactivate(emp.id)} className="bg-destructive text-destructive-foreground">Remover</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -402,7 +558,9 @@ const EquipeTab = () => {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>✓ {editing ? 'Salvar Alterações' : 'Criar Funcionário'}</Button>
+            <Button onClick={handleSave} disabled={updateProfileMutation.isPending || createEmployeeMutation.isPending}>
+              ✓ {editing ? 'Salvar Alterações' : 'Criar Funcionário'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

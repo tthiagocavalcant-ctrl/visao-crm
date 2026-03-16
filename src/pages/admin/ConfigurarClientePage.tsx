@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockAccounts, BRAZILIAN_TIMEZONES, Account } from '@/data/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tables } from '@/integrations/supabase/types';
+import { BRAZILIAN_TIMEZONES } from '@/data/mock-data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,13 +27,25 @@ import {
 import { ArrowLeft, Copy, Check, ExternalLink, ChevronDown, AlertTriangle, Trash2, RefreshCw, Eye, EyeOff, QrCode, Unplug, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+type Account = Tables<'accounts'>;
+
 const ConfigurarClientePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const accountData = mockAccounts.find((a) => a.id === id);
-  const [account, setAccount] = useState<Account | null>(accountData ? { ...accountData } : null);
+  const { data: accountData, isLoading } = useQuery({
+    queryKey: ['account', id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('accounts').select('*').eq('id', id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const [account, setAccount] = useState<Account | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -38,10 +53,38 @@ const ConfigurarClientePage = () => {
   const [formActive, setFormActive] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [evolutionUrl, setEvolutionUrl] = useState('');
-  const [evolutionKey, setEvolutionKey] = useState('');
-  const [evolutionInstance, setEvolutionInstance] = useState('');
   const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+
+  useEffect(() => {
+    if (accountData) setAccount({ ...accountData });
+  }, [accountData]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (updates: Partial<Account>) => {
+      const { error } = await supabase.from('accounts').update(updates).eq('id', id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['account', id] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('accounts').delete().eq('id', id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Cliente excluído' });
+      navigate('/admin/clientes');
+    },
+  });
+
+  if (isLoading) {
+    return <div className="text-center py-16"><p className="text-muted-foreground">Carregando...</p></div>;
+  }
 
   if (!account) {
     return (
@@ -61,6 +104,23 @@ const ConfigurarClientePage = () => {
   };
 
   const handleSave = (section: string) => {
+    if (!account) return;
+    saveMutation.mutate({
+      name: account.name,
+      whatsapp_link: account.whatsapp_link,
+      n8n_webhook: account.n8n_webhook,
+      followup_webhook: account.followup_webhook,
+      sale_webhook: account.sale_webhook,
+      facebook_pixel: account.facebook_pixel,
+      google_ads_tag: account.google_ads_tag,
+      timezone: account.timezone,
+      responsible_name: account.responsible_name,
+      phone: account.phone,
+      status: account.status,
+      evolution_url: account.evolution_url,
+      evolution_key: account.evolution_key,
+      evolution_instance: account.evolution_instance,
+    });
     toast({ title: `${section} salvo com sucesso!` });
   };
 
@@ -130,11 +190,11 @@ const ConfigurarClientePage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome do Responsável</Label>
-                  <Input value={account.responsible_name} onChange={(e) => update('responsible_name', e.target.value)} />
+                  <Input value={account.responsible_name || ''} onChange={(e) => update('responsible_name', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Telefone</Label>
-                  <Input value={account.phone} onChange={(e) => update('phone', e.target.value)} />
+                  <Input value={account.phone || ''} onChange={(e) => update('phone', e.target.value)} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -146,14 +206,16 @@ const ConfigurarClientePage = () => {
               </div>
               <div className="space-y-2">
                 <Label>Fuso Horário</Label>
-                <Select value={account.timezone} onValueChange={(v) => update('timezone', v)}>
+                <Select value={account.timezone || 'America/Sao_Paulo'} onValueChange={(v) => update('timezone', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {BRAZILIAN_TIMEZONES.map((tz) => <SelectItem key={tz} value={tz}>{tz}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => handleSave('Dados')} className="w-full gap-2">💾 Salvar Dados</Button>
+              <Button onClick={() => handleSave('Dados')} disabled={saveMutation.isPending} className="w-full gap-2">
+                {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Dados'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -170,15 +232,15 @@ const ConfigurarClientePage = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Evolution API URL</Label>
-                <Input value={evolutionUrl} onChange={e => setEvolutionUrl(e.target.value)} placeholder="https://evolution.example.com" />
+                <Input value={account.evolution_url || ''} onChange={e => update('evolution_url', e.target.value)} placeholder="https://evolution.example.com" />
               </div>
               <div className="space-y-2">
                 <Label>Evolution API Key</Label>
                 <div className="flex gap-2">
                   <Input
                     type={showApiKey ? 'text' : 'password'}
-                    value={evolutionKey}
-                    onChange={e => setEvolutionKey(e.target.value)}
+                    value={account.evolution_key || ''}
+                    onChange={e => update('evolution_key', e.target.value)}
                     placeholder="Sua API Key"
                   />
                   <Button variant="outline" size="sm" onClick={() => setShowApiKey(!showApiKey)} className="shrink-0">
@@ -188,9 +250,11 @@ const ConfigurarClientePage = () => {
               </div>
               <div className="space-y-2">
                 <Label>Instance Name</Label>
-                <Input value={evolutionInstance} onChange={e => setEvolutionInstance(e.target.value)} placeholder="instance-name" />
+                <Input value={account.evolution_instance || ''} onChange={e => update('evolution_instance', e.target.value)} placeholder="instance-name" />
               </div>
-              <Button onClick={() => handleSave('WhatsApp Config')} className="w-full gap-2">💾 Salvar Configuração</Button>
+              <Button onClick={() => handleSave('WhatsApp Config')} disabled={saveMutation.isPending} className="w-full gap-2">
+                {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Configuração'}
+              </Button>
             </CardContent>
           </Card>
 
@@ -218,7 +282,7 @@ const ConfigurarClientePage = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowQrModal(true)}
-                  disabled={!evolutionUrl || !evolutionKey || !evolutionInstance}
+                  disabled={!account.evolution_url || !account.evolution_key || !account.evolution_instance}
                   className="gap-2"
                 >
                   <QrCode className="w-4 h-4" /> Gerar QR Code
@@ -247,7 +311,6 @@ const ConfigurarClientePage = () => {
           </Card>
         </TabsContent>
 
-
         <TabsContent value="whatsapp" className="space-y-6 mt-6">
           <Card className="border-border">
             <CardHeader><CardTitle className="text-lg">WhatsApp</CardTitle></CardHeader>
@@ -255,9 +318,9 @@ const ConfigurarClientePage = () => {
               <div className="space-y-2">
                 <Label>Link do WhatsApp</Label>
                 <div className="flex gap-2">
-                  <Input value={account.whatsapp_link} onChange={(e) => update('whatsapp_link', e.target.value)} placeholder="https://wa.me/5511999999999" />
+                  <Input value={account.whatsapp_link || ''} onChange={(e) => update('whatsapp_link', e.target.value)} placeholder="https://wa.me/5511999999999" />
                   {account.whatsapp_link && (
-                    <Button variant="outline" size="sm" onClick={() => window.open(account.whatsapp_link, '_blank')} className="shrink-0 gap-1">
+                    <Button variant="outline" size="sm" onClick={() => window.open(account.whatsapp_link!, '_blank')} className="shrink-0 gap-1">
                       <ExternalLink className="w-3.5 h-3.5" /> Testar
                     </Button>
                   )}
@@ -287,7 +350,9 @@ const ConfigurarClientePage = () => {
               </div>
             </CardContent>
           </Card>
-          <Button onClick={() => handleSave('WhatsApp & Forms')} className="w-full gap-2">💾 Salvar</Button>
+          <Button onClick={() => handleSave('WhatsApp & Forms')} disabled={saveMutation.isPending} className="w-full gap-2">
+            {saveMutation.isPending ? 'Salvando...' : '💾 Salvar'}
+          </Button>
         </TabsContent>
 
         {/* TAB: N8n / Webhook */}
@@ -332,7 +397,7 @@ const ConfigurarClientePage = () => {
                     <div className={`w-2 h-2 rounded-full ${account[wh.key] ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
                     <Label>{wh.label}</Label>
                   </div>
-                  <Input value={account[wh.key]} onChange={(e) => update(wh.key, e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
+                  <Input value={account[wh.key] || ''} onChange={(e) => update(wh.key, e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
                   <p className="text-xs text-muted-foreground">{wh.helper}</p>
                   <Collapsible>
                     <CollapsibleTrigger className="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
@@ -348,7 +413,9 @@ const ConfigurarClientePage = () => {
               ))}
             </CardContent>
           </Card>
-          <Button onClick={() => handleSave('Webhooks')} className="w-full gap-2">💾 Salvar Webhooks</Button>
+          <Button onClick={() => handleSave('Webhooks')} disabled={saveMutation.isPending} className="w-full gap-2">
+            {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Webhooks'}
+          </Button>
         </TabsContent>
 
         {/* TAB: Pixels & Tracking */}
@@ -361,22 +428,24 @@ const ConfigurarClientePage = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Pixel do Facebook</Label>
-                <Input value={account.facebook_pixel} onChange={(e) => update('facebook_pixel', e.target.value)} placeholder="Ex: 123456789012345" />
+                <Input value={account.facebook_pixel || ''} onChange={(e) => update('facebook_pixel', e.target.value)} placeholder="Ex: 123456789012345" />
                 <p className="text-xs text-muted-foreground">ID do pixel do Facebook para rastreamento de conversões</p>
               </div>
               <div className="space-y-2">
                 <Label>Tag de Conversão Google Ads</Label>
-                <Input value={account.google_ads_tag} onChange={(e) => update('google_ads_tag', e.target.value)} placeholder="AW-XXXXXXXXX/XXXXXXXXX" />
+                <Input value={account.google_ads_tag || ''} onChange={(e) => update('google_ads_tag', e.target.value)} placeholder="AW-XXXXXXXXX/XXXXXXXXX" />
                 <p className="text-xs text-muted-foreground">Tag de conversão do Google Ads. Formato: AW-XXXXXXXXXX</p>
               </div>
               <div className="space-y-2">
                 <Label>Webhook Venda Realizada</Label>
-                <Input value={account.sale_webhook} onChange={(e) => update('sale_webhook', e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
+                <Input value={account.sale_webhook || ''} onChange={(e) => update('sale_webhook', e.target.value)} placeholder="https://n8n.example.com/webhook/..." />
                 <p className="text-xs text-muted-foreground">Disparado quando um lead é marcado como venda</p>
               </div>
             </CardContent>
           </Card>
-          <Button onClick={() => handleSave('Pixels & Tracking')} className="w-full gap-2">💾 Salvar</Button>
+          <Button onClick={() => handleSave('Pixels & Tracking')} disabled={saveMutation.isPending} className="w-full gap-2">
+            {saveMutation.isPending ? 'Salvando...' : '💾 Salvar'}
+          </Button>
         </TabsContent>
 
         {/* TAB: Acesso */}
@@ -409,7 +478,7 @@ const ConfigurarClientePage = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { update('status', 'inactive'); toast({ title: 'Acesso revogado' }); }} className="bg-destructive text-destructive-foreground">Revogar</AlertDialogAction>
+                    <AlertDialogAction onClick={() => { update('status', 'inactive'); saveMutation.mutate({ status: 'inactive' }); toast({ title: 'Acesso revogado' }); }} className="bg-destructive text-destructive-foreground">Revogar</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -432,8 +501,8 @@ const ConfigurarClientePage = () => {
               </div>
               <Button
                 variant="destructive"
-                disabled={deleteConfirm !== account.name}
-                onClick={() => { toast({ title: 'Cliente excluído' }); navigate('/admin/clientes'); }}
+                disabled={deleteConfirm !== account.name || deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate()}
                 className="gap-2"
               >
                 <Trash2 className="w-4 h-4" /> Excluir Cliente

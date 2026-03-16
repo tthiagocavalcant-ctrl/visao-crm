@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import { mockTasks, mockEmployees, mockTaskActivities, mockUsers, Task, TaskActivity } from '@/data/mock-data';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tables } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +26,10 @@ import { Plus, CalendarIcon, Trash2, Clock, User as UserIcon, AlertCircle, Check
 import { useToast } from '@/hooks/use-toast';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
+
+type Task = Tables<'tasks'>;
+type TaskActivity = Tables<'task_activities'>;
+type Profile = Tables<'profiles'>;
 
 const TASK_STATUSES = [
   { id: 'a_fazer' as const, name: 'A Fazer', icon: Circle, color: 'bg-primary/20 text-primary border-primary/40' },
@@ -59,11 +65,11 @@ function DroppableColumn({ id, children }: { id: string; children: React.ReactNo
 const TarefasPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const accountId = user?.account_id;
   const isAdmin = user?.role === 'ADMIN';
   const isFuncionario = user?.role === 'FUNCIONARIO';
 
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [activities, setActivities] = useState<TaskActivity[]>(mockTaskActivities);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -82,29 +88,64 @@ const TarefasPage = () => {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const allAssignees = useMemo(() => {
-    const list = mockEmployees.filter(e => e.account_id === user?.account_id && e.active);
-    // Add admin themselves
-    const adminUser = mockUsers.find(u => u.id === user?.id);
-    if (adminUser && !list.find(e => e.id === user?.id)) {
-      return [{ id: user?.id || '', name: adminUser.name, cargo: 'Administrador' }, ...list.map(e => ({ id: e.id, name: e.name, cargo: e.cargo }))];
-    }
-    return list.map(e => ({ id: e.id, name: e.name, cargo: e.cargo }));
-  }, [user]);
+  // ── Fetch tasks ──
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('account_id', accountId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId,
+  });
 
-  const getAssigneeName = (id: string) => {
-    const emp = mockEmployees.find(e => e.id === id);
-    if (emp) return emp.name;
-    const u = mockUsers.find(u => u.id === id);
-    return u?.name || 'Desconhecido';
+  // ── Fetch profiles (assignees) ──
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles', accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('account_id', accountId!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!accountId,
+  });
+
+  // ── Fetch task activities for selected task ──
+  const { data: activities = [] } = useQuery({
+    queryKey: ['task_activities', selectedTask?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('task_activities')
+        .select('*')
+        .eq('task_id', selectedTask!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTask,
+  });
+
+  const allAssignees = useMemo(() => {
+    return profiles.filter(p => p.active !== false).map(p => ({ id: p.id, name: p.name, cargo: p.cargo || '' }));
+  }, [profiles]);
+
+  const getAssigneeName = (id: string | null) => {
+    if (!id) return 'Não atribuído';
+    const p = profiles.find(p => p.id === id);
+    return p?.name || 'Desconhecido';
   };
 
   const filteredTasks = useMemo(() => {
-    let list = tasks.filter(t => t.account_id === (user?.account_id || 'acc-1'));
+    let list = tasks;
     if (isFuncionario) {
-      // Employees only see their tasks
-      const empId = mockEmployees.find(e => e.email === user?.email)?.id;
-      list = list.filter(t => t.assigned_to === empId);
+      list = list.filter(t => t.assigned_to === user?.id);
     } else if (tab === 'mine') {
       list = list.filter(t => t.assigned_to === user?.id || t.created_by === user?.id);
     } else if (tab === 'by_person' && filterPerson) {
@@ -113,6 +154,68 @@ const TarefasPage = () => {
     return list;
   }, [tasks, user, isFuncionario, tab, filterPerson]);
 
+  // ── Mutations ──
+  const createTaskMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('tasks').insert({
+        account_id: accountId!,
+        title: formTitle.trim(),
+        description: formDescription.trim() || null,
+        priority: formPriority,
+        status: formStatus,
+        assigned_to: formAssignedTo || null,
+        created_by: user?.id,
+        due_date: formDueDate ? format(formDueDate, 'yyyy-MM-dd') : null,
+        tags: formTags ? formTags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', accountId] });
+      toast({ title: `Tarefa criada e atribuída para ${getAssigneeName(formAssignedTo)}` });
+      setShowCreateModal(false);
+      resetForm();
+    },
+    onError: () => toast({ title: 'Erro ao criar tarefa', variant: 'destructive' }),
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async (updates: Partial<Task> & { id: string }) => {
+      const { id, ...rest } = updates;
+      const { error } = await supabase.from('tasks').update(rest).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', accountId] });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', accountId] });
+      toast({ title: 'Tarefa excluída' });
+      setSelectedTask(null);
+      setShowDeleteConfirm(false);
+    },
+  });
+
+  const addActivityMutation = useMutation({
+    mutationFn: async (activity: { task_id: string; action: string; description: string }) => {
+      const { error } = await supabase.from('task_activities').insert({
+        ...activity,
+        user_id: user?.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task_activities'] });
+    },
+  });
+
   const resetForm = () => {
     setFormTitle(''); setFormDescription(''); setFormPriority('media');
     setFormAssignedTo(''); setFormDueDate(undefined); setFormStatus('a_fazer'); setFormTags('');
@@ -120,47 +223,17 @@ const TarefasPage = () => {
 
   const handleCreate = () => {
     if (!formTitle.trim() || !formAssignedTo) return;
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      account_id: user?.account_id || 'acc-1',
-      title: formTitle.trim(),
-      description: formDescription.trim(),
-      priority: formPriority,
-      status: formStatus,
-      assigned_to: formAssignedTo,
-      created_by: user?.id || '2',
-      due_date: formDueDate ? format(formDueDate, 'yyyy-MM-dd') : undefined,
-      tags: formTags ? formTags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setTasks(prev => [...prev, newTask]);
-    const activity: TaskActivity = {
-      id: `ta-${Date.now()}`,
-      task_id: newTask.id,
-      user_id: user?.id || '2',
-      action: 'created',
-      description: `Tarefa criada por ${user?.name}`,
-      created_at: new Date().toISOString(),
-    };
-    setActivities(prev => [...prev, activity]);
-    const assigneeName = getAssigneeName(formAssignedTo);
-    toast({ title: `Tarefa criada e atribuída para ${assigneeName}` });
-    setShowCreateModal(false);
-    resetForm();
+    createTaskMutation.mutate();
   };
 
   const handleUpdateTask = (updated: Task) => {
-    setTasks(prev => prev.map(t => t.id === updated.id ? { ...updated, updated_at: new Date().toISOString() } : t));
-    setSelectedTask({ ...updated, updated_at: new Date().toISOString() });
+    setSelectedTask(updated);
+    updateTaskMutation.mutate({ id: updated.id, description: updated.description, priority: updated.priority, status: updated.status, assigned_to: updated.assigned_to, due_date: updated.due_date });
   };
 
   const handleDeleteTask = () => {
     if (!selectedTask) return;
-    setTasks(prev => prev.filter(t => t.id !== selectedTask.id));
-    toast({ title: 'Tarefa excluída' });
-    setSelectedTask(null);
-    setShowDeleteConfirm(false);
+    deleteTaskMutation.mutate(selectedTask.id);
   };
 
   const handleDragStart = (event: DragStartEvent) => setActiveDragId(event.active.id as string);
@@ -169,22 +242,14 @@ const TarefasPage = () => {
     const { active, over } = event;
     if (!over) return;
     const taskId = active.id as string;
-    const newStatus = over.id as Task['status'];
+    const newStatus = over.id as 'a_fazer' | 'em_andamento' | 'concluido';
     const task = tasks.find(t => t.id === taskId);
     if (!task || task.status === newStatus) return;
     const statusName = TASK_STATUSES.find(s => s.id === newStatus)?.name || newStatus;
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, updated_at: new Date().toISOString() } : t));
-    const activity: TaskActivity = {
-      id: `ta-${Date.now()}`,
-      task_id: taskId,
-      user_id: user?.id || '',
-      action: 'status_changed',
-      description: `Status alterado para ${statusName}`,
-      created_at: new Date().toISOString(),
-    };
-    setActivities(prev => [...prev, activity]);
+    updateTaskMutation.mutate({ id: taskId, status: newStatus });
+    addActivityMutation.mutate({ task_id: taskId, action: 'status_changed', description: `Status alterado para ${statusName}` });
     toast({ title: `Tarefa movida para ${statusName}` });
-  }, [tasks, user]);
+  }, [tasks, user, updateTaskMutation, addActivityMutation, toast]);
 
   const draggedTask = activeDragId ? tasks.find(t => t.id === activeDragId) : null;
 
@@ -196,48 +261,49 @@ const TarefasPage = () => {
 
   const isOverdue = (task: Task) => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'concluido';
 
-  const TaskCard = ({ task, isDragOverlay }: { task: Task; isDragOverlay?: boolean }) => (
-    <div
-      onClick={() => !isDragOverlay && setSelectedTask(task)}
-      className={cn(
-        'glass-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover space-y-2',
-        isDragOverlay && 'shadow-lg ring-2 ring-primary/30'
-      )}
-    >
-      <p className="text-sm font-medium text-foreground">{task.title}</p>
-      {task.description && (
-        <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-      )}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', PRIORITY_CONFIG[task.priority].badge)}>
-          {PRIORITY_CONFIG[task.priority].label}
-        </Badge>
-        {task.due_date && (
-          <span className={cn('text-[11px] flex items-center gap-1', isOverdue(task) ? 'text-destructive' : 'text-muted-foreground')}>
-            <CalendarIcon className="w-3 h-3" />
-            {new Date(task.due_date).toLocaleDateString('pt-BR')}
-          </span>
+  const TaskCard = ({ task, isDragOverlay }: { task: Task; isDragOverlay?: boolean }) => {
+    const assigneeName = getAssigneeName(task.assigned_to);
+    return (
+      <div
+        onClick={() => !isDragOverlay && setSelectedTask(task)}
+        className={cn(
+          'glass-card border border-border rounded p-3 cursor-pointer hover:bg-card-hover space-y-2',
+          isDragOverlay && 'shadow-lg ring-2 ring-primary/30'
         )}
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold', getAvatarColor(getAssigneeName(task.assigned_to)))}>
-            {getInitials(getAssigneeName(task.assigned_to))}
-          </div>
-          <span className="text-[11px] text-muted-foreground">{getAssigneeName(task.assigned_to)}</span>
+      >
+        <p className="text-sm font-medium text-foreground">{task.title}</p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', task.priority ? PRIORITY_CONFIG[task.priority].badge : '')}>
+            {task.priority ? PRIORITY_CONFIG[task.priority].label : 'Média'}
+          </Badge>
+          {task.due_date && (
+            <span className={cn('text-[11px] flex items-center gap-1', isOverdue(task) ? 'text-destructive' : 'text-muted-foreground')}>
+              <CalendarIcon className="w-3 h-3" />
+              {new Date(task.due_date).toLocaleDateString('pt-BR')}
+            </span>
+          )}
         </div>
-        {task.tags.length > 0 && (
-          <div className="flex gap-1">
-            {task.tags.slice(0, 1).map(t => (
-              <span key={t} className="text-[9px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>
-            ))}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold', getAvatarColor(assigneeName))}>
+              {getInitials(assigneeName)}
+            </div>
+            <span className="text-[11px] text-muted-foreground">{assigneeName}</span>
           </div>
-        )}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex gap-1">
+              {task.tags.slice(0, 1).map(t => (
+                <span key={t} className="text-[9px] bg-accent text-accent-foreground px-1.5 py-0.5 rounded">{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-
-  const taskActivitiesForSelected = selectedTask ? activities.filter(a => a.task_id === selectedTask.id).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : [];
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -399,7 +465,9 @@ const TarefasPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!formTitle.trim() || !formAssignedTo}>✓ Criar Tarefa</Button>
+            <Button onClick={handleCreate} disabled={!formTitle.trim() || !formAssignedTo || createTaskMutation.isPending}>
+              {createTaskMutation.isPending ? 'Criando...' : '✓ Criar Tarefa'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -417,7 +485,7 @@ const TarefasPage = () => {
                   <Label className="text-xs text-muted-foreground">Descrição</Label>
                   {isAdmin ? (
                     <Textarea
-                      value={selectedTask.description}
+                      value={selectedTask.description || ''}
                       onChange={e => handleUpdateTask({ ...selectedTask, description: e.target.value })}
                       rows={3}
                     />
@@ -428,14 +496,10 @@ const TarefasPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Status</Label>
-                    <Select value={selectedTask.status} onValueChange={(v: any) => {
+                    <Select value={selectedTask.status || 'a_fazer'} onValueChange={(v: any) => {
                       handleUpdateTask({ ...selectedTask, status: v });
                       const statusName = TASK_STATUSES.find(s => s.id === v)?.name;
-                      const activity: TaskActivity = {
-                        id: `ta-${Date.now()}`, task_id: selectedTask.id, user_id: user?.id || '',
-                        action: 'status_changed', description: `Status alterado para ${statusName}`, created_at: new Date().toISOString(),
-                      };
-                      setActivities(prev => [...prev, activity]);
+                      addActivityMutation.mutate({ task_id: selectedTask.id, action: 'status_changed', description: `Status alterado para ${statusName}` });
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -446,7 +510,7 @@ const TarefasPage = () => {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Prioridade</Label>
                     {isAdmin ? (
-                      <Select value={selectedTask.priority} onValueChange={(v: any) => handleUpdateTask({ ...selectedTask, priority: v })}>
+                      <Select value={selectedTask.priority || 'media'} onValueChange={(v: any) => handleUpdateTask({ ...selectedTask, priority: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="alta">🔴 Alta</SelectItem>
@@ -455,8 +519,8 @@ const TarefasPage = () => {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge variant="outline" className={cn('text-xs', PRIORITY_CONFIG[selectedTask.priority].badge)}>
-                        {PRIORITY_CONFIG[selectedTask.priority].label}
+                      <Badge variant="outline" className={cn('text-xs', selectedTask.priority ? PRIORITY_CONFIG[selectedTask.priority].badge : '')}>
+                        {selectedTask.priority ? PRIORITY_CONFIG[selectedTask.priority].label : 'Média'}
                       </Badge>
                     )}
                   </div>
@@ -464,13 +528,9 @@ const TarefasPage = () => {
                 {isAdmin && (
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Responsável</Label>
-                    <Select value={selectedTask.assigned_to} onValueChange={v => {
+                    <Select value={selectedTask.assigned_to || ''} onValueChange={v => {
                       handleUpdateTask({ ...selectedTask, assigned_to: v });
-                      const activity: TaskActivity = {
-                        id: `ta-${Date.now()}`, task_id: selectedTask.id, user_id: user?.id || '',
-                        action: 'reassigned', description: `Atribuída para ${getAssigneeName(v)}`, created_at: new Date().toISOString(),
-                      };
-                      setActivities(prev => [...prev, activity]);
+                      addActivityMutation.mutate({ task_id: selectedTask.id, action: 'reassigned', description: `Atribuída para ${getAssigneeName(v)}` });
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -490,7 +550,7 @@ const TarefasPage = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={selectedTask.due_date ? new Date(selectedTask.due_date) : undefined} onSelect={d => handleUpdateTask({ ...selectedTask, due_date: d ? format(d, 'yyyy-MM-dd') : undefined })} className="p-3 pointer-events-auto" />
+                        <Calendar mode="single" selected={selectedTask.due_date ? new Date(selectedTask.due_date) : undefined} onSelect={d => handleUpdateTask({ ...selectedTask, due_date: d ? format(d, 'yyyy-MM-dd') : null })} className="p-3 pointer-events-auto" />
                       </PopoverContent>
                     </Popover>
                   ) : (
@@ -502,16 +562,16 @@ const TarefasPage = () => {
                 <div className="space-y-2 border-t border-border pt-3 mt-3">
                   <Label className="text-xs text-muted-foreground uppercase tracking-wider">Histórico de Atividades</Label>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {taskActivitiesForSelected.length === 0 ? (
+                    {activities.length === 0 ? (
                       <p className="text-xs text-muted-foreground">Nenhuma atividade registrada</p>
                     ) : (
-                      taskActivitiesForSelected.map(a => (
+                      activities.map(a => (
                         <div key={a.id} className="flex items-start gap-2 text-xs">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                           <div>
                             <p className="text-foreground">{a.description}</p>
                             <p className="text-muted-foreground text-[10px]">
-                              {new Date(a.created_at).toLocaleDateString('pt-BR')} às {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(a.created_at!).toLocaleDateString('pt-BR')} às {new Date(a.created_at!).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

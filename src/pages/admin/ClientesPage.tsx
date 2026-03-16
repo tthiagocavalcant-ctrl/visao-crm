@@ -1,45 +1,57 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockAccounts, Account } from '@/data/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Search, Plus, Settings, Trash2, MessageCircle, Webhook, FileText, Building2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+type Account = Tables<'accounts'>;
+
 const ClientesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('accounts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      toast({ title: 'Cliente excluído com sucesso' });
+    },
+    onError: () => toast({ title: 'Erro ao excluir cliente', variant: 'destructive' }),
+  });
 
   const filtered = accounts.filter((a) => {
     const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
@@ -47,12 +59,8 @@ const ClientesPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDelete = (id: string) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
-    toast({ title: 'Cliente excluído com sucesso' });
-  };
-
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
   };
@@ -70,21 +78,13 @@ const ClientesPage = () => {
         </Button>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar cliente por nome..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder="Buscar cliente por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Todos os status" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Todos os status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
@@ -97,7 +97,6 @@ const ClientesPage = () => {
         </span>
       </div>
 
-      {/* Table */}
       {filtered.length === 0 ? (
         <Card className="border-border">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -105,8 +104,7 @@ const ClientesPage = () => {
             <p className="text-foreground font-medium mb-1">Nenhum cliente cadastrado</p>
             <p className="text-muted-foreground text-sm mb-4">Comece criando seu primeiro cliente</p>
             <Button onClick={() => navigate('/admin/clientes/novo')} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Criar Primeiro Cliente
+              <Plus className="w-4 h-4" /> Criar Primeiro Cliente
             </Button>
           </CardContent>
         </Card>
@@ -154,14 +152,8 @@ const ClientesPage = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/admin/clientes/${account.id}/configurar`)}
-                        className="gap-1.5"
-                      >
-                        <Settings className="w-3.5 h-3.5" />
-                        Configurar
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/clientes/${account.id}/configurar`)} className="gap-1.5">
+                        <Settings className="w-3.5 h-3.5" /> Configurar
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -178,7 +170,7 @@ const ClientesPage = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(account.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(account.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                               Excluir
                             </AlertDialogAction>
                           </AlertDialogFooter>
