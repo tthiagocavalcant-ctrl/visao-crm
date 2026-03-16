@@ -5,7 +5,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import {
   Home, CheckSquare, MessageCircle, Kanban, Settings, LogOut, Sun, Moon, Users,
 } from 'lucide-react';
-import { mockAccounts, mockEmployees } from '@/data/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const allNavItems = [
   { label: 'Início', icon: Home, href: '/dashboard', permission: 'dashboard' as const },
@@ -35,9 +36,32 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   const handleLogout = () => { logout(); navigate('/'); };
 
-  const account = mockAccounts.find(a => a.id === (user?.account_id || 'acc-1'));
-  const teamMembers = mockEmployees.filter(e => e.account_id === (user?.account_id || 'acc-1') && e.active);
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['team', user?.account_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, email, cargo, active')
+        .eq('account_id', user!.account_id!)
+        .eq('active', true)
+        .order('name');
+      return data || [];
+    },
+    enabled: !!user?.account_id,
+  });
 
+  const { data: account } = useQuery({
+    queryKey: ['account', user?.account_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('accounts')
+        .select('id, name')
+        .eq('id', user!.account_id!)
+        .single();
+      return data;
+    },
+    enabled: !!user?.account_id,
+  });
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   const getAvatarColor = (name: string) => {
     const colors = ['bg-purple-600', 'bg-blue-600', 'bg-emerald-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-600'];
