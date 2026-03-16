@@ -29,6 +29,18 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  useEffect(() => {
+    const debug = async () => {
+      const { data, error } = await supabase.from('accounts').select('*');
+      console.log('ACCOUNTS DATA:', data);
+      console.log('ACCOUNTS ERROR:', error);
+      
+      const { data: session } = await supabase.auth.getSession();
+      console.log('SESSION:', session);
+    };
+    debug();
+  }, []);
+
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
