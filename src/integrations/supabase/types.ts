@@ -14,16 +14,636 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          api_key: string | null
+          created_at: string | null
+          email: string
+          evolution_instance: string | null
+          evolution_key: string | null
+          evolution_url: string | null
+          facebook_pixel: string | null
+          followup_webhook: string | null
+          google_ads_tag: string | null
+          id: string
+          logo_url: string | null
+          n8n_webhook: string | null
+          name: string
+          permissions: Json | null
+          phone: string | null
+          responsible_name: string | null
+          sale_webhook: string | null
+          status: Database["public"]["Enums"]["account_status"] | null
+          timezone: string | null
+          whatsapp_link: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string | null
+          email: string
+          evolution_instance?: string | null
+          evolution_key?: string | null
+          evolution_url?: string | null
+          facebook_pixel?: string | null
+          followup_webhook?: string | null
+          google_ads_tag?: string | null
+          id?: string
+          logo_url?: string | null
+          n8n_webhook?: string | null
+          name: string
+          permissions?: Json | null
+          phone?: string | null
+          responsible_name?: string | null
+          sale_webhook?: string | null
+          status?: Database["public"]["Enums"]["account_status"] | null
+          timezone?: string | null
+          whatsapp_link?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string | null
+          email?: string
+          evolution_instance?: string | null
+          evolution_key?: string | null
+          evolution_url?: string | null
+          facebook_pixel?: string | null
+          followup_webhook?: string | null
+          google_ads_tag?: string | null
+          id?: string
+          logo_url?: string | null
+          n8n_webhook?: string | null
+          name?: string
+          permissions?: Json | null
+          phone?: string | null
+          responsible_name?: string | null
+          sale_webhook?: string | null
+          status?: Database["public"]["Enums"]["account_status"] | null
+          timezone?: string | null
+          whatsapp_link?: string | null
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          account_id: string
+          assigned_to: string | null
+          contact_avatar_url: string | null
+          contact_name: string
+          contact_phone: string
+          created_at: string | null
+          id: string
+          is_online: boolean | null
+          last_message: string | null
+          last_message_at: string | null
+          lead_id: string | null
+          status: Database["public"]["Enums"]["conversation_status"] | null
+          unread_count: number | null
+        }
+        Insert: {
+          account_id: string
+          assigned_to?: string | null
+          contact_avatar_url?: string | null
+          contact_name: string
+          contact_phone: string
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          lead_id?: string | null
+          status?: Database["public"]["Enums"]["conversation_status"] | null
+          unread_count?: number | null
+        }
+        Update: {
+          account_id?: string
+          assigned_to?: string | null
+          contact_avatar_url?: string | null
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          lead_id?: string | null
+          status?: Database["public"]["Enums"]["conversation_status"] | null
+          unread_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interactions: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          created_by: string | null
+          description: string
+          id: string
+          lead_id: string
+          type: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          id?: string
+          lead_id: string
+          type: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          id?: string
+          lead_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          account_id: string
+          canal: Database["public"]["Enums"]["lead_canal"] | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          pipeline_status: string
+          scheduled_at: string | null
+          tags: string[] | null
+          temperature: Database["public"]["Enums"]["lead_temperature"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          canal?: Database["public"]["Enums"]["lead_canal"] | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          pipeline_status?: string
+          scheduled_at?: string | null
+          tags?: string[] | null
+          temperature?: Database["public"]["Enums"]["lead_temperature"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          canal?: Database["public"]["Enums"]["lead_canal"] | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          pipeline_status?: string
+          scheduled_at?: string | null
+          tags?: string[] | null
+          temperature?: Database["public"]["Enums"]["lead_temperature"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          account_id: string
+          content: string
+          conversation_id: string
+          created_at: string | null
+          direction: Database["public"]["Enums"]["message_direction"]
+          id: string
+          media_url: string | null
+          message_type: Database["public"]["Enums"]["message_type"] | null
+          sent_by: string | null
+          status: Database["public"]["Enums"]["message_status"] | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          account_id: string
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          direction: Database["public"]["Enums"]["message_direction"]
+          id?: string
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"] | null
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["message_status"] | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          direction?: Database["public"]["Enums"]["message_direction"]
+          id?: string
+          media_url?: string | null
+          message_type?: Database["public"]["Enums"]["message_type"] | null
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["message_status"] | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_statuses: {
+        Row: {
+          account_id: string
+          color: string
+          created_at: string | null
+          id: string
+          name: string
+          position: number | null
+          slug: string
+          visible: boolean | null
+        }
+        Insert: {
+          account_id: string
+          color?: string
+          created_at?: string | null
+          id?: string
+          name: string
+          position?: number | null
+          slug: string
+          visible?: boolean | null
+        }
+        Update: {
+          account_id?: string
+          color?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          position?: number | null
+          slug?: string
+          visible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_statuses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          account_id: string | null
+          active: boolean | null
+          cargo: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          permissions: Json | null
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          account_id?: string | null
+          active?: boolean | null
+          cargo?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          name: string
+          permissions?: Json | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          account_id?: string | null
+          active?: boolean | null
+          cargo?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          permissions?: Json | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          account_id: string
+          completed_tasks: number | null
+          created_at: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["project_status"] | null
+          total_tasks: number | null
+        }
+        Insert: {
+          account_id: string
+          completed_tasks?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["project_status"] | null
+          total_tasks?: number | null
+        }
+        Update: {
+          account_id?: string
+          completed_tasks?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["project_status"] | null
+          total_tasks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_activities: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string
+          id: string
+          task_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description: string
+          id?: string
+          task_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          task_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          account_id: string
+          assigned_to: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"] | null
+          project_id: string | null
+          status: Database["public"]["Enums"]["task_status"] | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          assigned_to?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          account_id: string
+          address: string | null
+          city: string | null
+          created_at: string | null
+          id: string
+          name: string
+          phone: string | null
+          responsible: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["account_status"] | null
+        }
+        Insert: {
+          account_id: string
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          responsible?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["account_status"] | null
+        }
+        Update: {
+          account_id?: string
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          responsible?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["account_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_account_id: { Args: { _user_id: string }; Returns: string }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      account_status: "active" | "inactive"
+      conversation_status: "active" | "archived" | "blocked"
+      lead_canal:
+        | "whatsapp"
+        | "instagram"
+        | "trafego_pago"
+        | "google"
+        | "facebook"
+        | "indicacao"
+        | "outro"
+      lead_temperature: "frio" | "morno" | "quente"
+      message_direction: "inbound" | "outbound"
+      message_status: "sent" | "delivered" | "read"
+      message_type: "text" | "image" | "audio" | "document" | "system"
+      project_status: "active" | "completed" | "archived"
+      task_priority: "alta" | "media" | "baixa"
+      task_status: "a_fazer" | "em_andamento" | "concluido"
+      user_role: "ADMIN_GERAL" | "ADMIN" | "FUNCIONARIO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +770,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_status: ["active", "inactive"],
+      conversation_status: ["active", "archived", "blocked"],
+      lead_canal: [
+        "whatsapp",
+        "instagram",
+        "trafego_pago",
+        "google",
+        "facebook",
+        "indicacao",
+        "outro",
+      ],
+      lead_temperature: ["frio", "morno", "quente"],
+      message_direction: ["inbound", "outbound"],
+      message_status: ["sent", "delivered", "read"],
+      message_type: ["text", "image", "audio", "document", "system"],
+      project_status: ["active", "completed", "archived"],
+      task_priority: ["alta", "media", "baixa"],
+      task_status: ["a_fazer", "em_andamento", "concluido"],
+      user_role: ["ADMIN_GERAL", "ADMIN", "FUNCIONARIO"],
+    },
   },
 } as const
