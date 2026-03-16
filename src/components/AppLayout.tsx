@@ -5,7 +5,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import {
   Home, CheckSquare, MessageCircle, Kanban, Settings, LogOut, Sun, Moon, Users,
 } from 'lucide-react';
-import { mockAccounts, mockEmployees } from '@/data/mock-data';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const allNavItems = [
   { label: 'Início', icon: Home, href: '/dashboard', permission: 'dashboard' as const },
