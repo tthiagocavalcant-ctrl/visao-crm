@@ -77,6 +77,7 @@ const NovoClientePage = () => {
     }
     setSubmitting(true);
     try {
+      // 1. Create the account
       const { data, error } = await supabase
         .from('accounts')
         .insert({
@@ -99,16 +100,20 @@ const NovoClientePage = () => {
         return;
       }
 
-      // Create admin user for this account
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { name: form.responsibleName || form.companyName, role: 'ADMIN', account_id: data.id } },
+      // 2. Create admin user via edge function (doesn't affect current session)
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('create-client-user', {
+        body: {
+          email: form.email,
+          password: form.password,
+          name: form.responsibleName || form.companyName,
+          account_id: data.id,
+        },
       });
 
-      if (signUpError) {
+      if (res.error || res.data?.error) {
         await supabase.from('accounts').delete().eq('id', data.id);
-        toast({ title: 'Erro ao criar usuário', description: signUpError.message, variant: 'destructive' });
+        toast({ title: 'Erro ao criar usuário', description: res.data?.error || res.error?.message, variant: 'destructive' });
         return;
       }
 
