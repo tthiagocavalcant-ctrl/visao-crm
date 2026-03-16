@@ -18,12 +18,17 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const success = await login(email, password);
-    setSubmitting(false);
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError('E-mail ou senha incorretos.');
+      }
+    } catch {
+      setError('Erro ao conectar. Tente novamente.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
