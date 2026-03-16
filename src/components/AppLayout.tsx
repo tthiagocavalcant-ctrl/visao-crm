@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
-  Home, CheckSquare, MessageCircle, MessageSquare, Kanban, Settings, LogOut, Sun, Moon, Users,
+  Home, CheckSquare, MessageCircle, MessageSquare, Kanban, Settings, LogOut, Sun, Moon, Users, Zap,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ const allNavItems = [
   { label: 'Tarefas', icon: CheckSquare, href: '/tarefas', permission: 'tarefas' as const },
   { label: 'Conversas', icon: MessageCircle, href: '/conversas', permission: 'conversas' as const },
   { label: 'Scripts', icon: MessageSquare, href: '/scripts', permission: 'scripts' as const },
+  { label: 'Follow-ups', icon: Zap, href: '/followups', permission: 'followups' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
 

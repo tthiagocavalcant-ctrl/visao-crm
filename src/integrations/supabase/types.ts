@@ -159,6 +159,89 @@ export type Database = {
           },
         ]
       }
+      followup_configs: {
+        Row: {
+          account_id: string
+          active: boolean
+          created_at: string | null
+          id: string
+          pipeline_status: string
+        }
+        Insert: {
+          account_id: string
+          active?: boolean
+          created_at?: string | null
+          id?: string
+          pipeline_status: string
+        }
+        Update: {
+          account_id?: string
+          active?: boolean
+          created_at?: string | null
+          id?: string
+          pipeline_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_configs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      followup_messages: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          delay_minutes: number
+          followup_config_id: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          message: string
+          position: number | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          delay_minutes?: number
+          followup_config_id: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message?: string
+          position?: number | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          delay_minutes?: number
+          followup_config_id?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          message?: string
+          position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followup_messages_followup_config_id_fkey"
+            columns: ["followup_config_id"]
+            isOneToOne: false
+            referencedRelation: "followup_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interactions: {
         Row: {
           account_id: string
