@@ -54,6 +54,9 @@ const ConfigurarClientePage = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     if (accountData) setAccount({ ...accountData });
