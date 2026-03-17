@@ -184,8 +184,6 @@ const ConfigurarClientePage = () => {
     }
   };
 
-  // Auto-refresh QR code every 20s - moved before early returns to satisfy hooks rules
-  // (actual logic guards with showQrModal check inside)
 
   const handleDisconnect = async () => {
     if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance || !id) return;
