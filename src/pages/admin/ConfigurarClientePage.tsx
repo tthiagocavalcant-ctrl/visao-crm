@@ -89,6 +89,13 @@ const ConfigurarClientePage = () => {
     },
   });
 
+  // Auto-refresh QR code every 20s - must be before early returns
+  useEffect(() => {
+    if (!showQrModal || whatsappStatus === 'connected') return;
+    const interval = setInterval(fetchQrCode, 20000);
+    return () => clearInterval(interval);
+  }, [showQrModal, whatsappStatus]);
+
   if (isLoading) {
     return <div className="text-center py-16"><p className="text-muted-foreground">Carregando...</p></div>;
   }
