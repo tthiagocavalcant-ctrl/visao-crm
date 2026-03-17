@@ -133,6 +133,74 @@ const ConfigurarClientePage = () => {
     toast({ title: `${section} salvo com sucesso!` });
   };
 
+  const handleSaveWhatsApp = async () => {
+    if (!account || !id) return;
+    const { error } = await supabase
+      .from('accounts')
+      .update({
+        evolution_url: account.evolution_url,
+        evolution_key: account.evolution_key,
+        evolution_instance: account.evolution_instance,
+      })
+      .eq('id', id);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['account', id] });
+      toast({ title: 'Configurações salvas com sucesso' });
+    }
+  };
+
+  const fetchQrCode = async () => {
+    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance) return;
+    setQrLoading(true);
+    setQrCodeBase64(null);
+    setWhatsappStatus('connecting');
+    try {
+      const url = `${account.evolution_url.replace(/\/$/, '')}/instance/connect/${account.evolution_instance}`;
+      const res = await fetch(url, { headers: { apikey: account.evolution_key } });
+      const json = await res.json();
+      if (json.base64) {
+        setQrCodeBase64(json.base64);
+      } else if (json.instance?.state === 'open' || json.state === 'open') {
+        // Already connected
+        setWhatsappStatus('connected');
+        await supabase.from('accounts').update({ whatsapp_status: 'connected' }).eq('id', id!);
+        queryClient.invalidateQueries({ queryKey: ['account', id] });
+        setShowQrModal(false);
+        toast({ title: 'WhatsApp conectado!' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro ao gerar QR Code', description: err.message, variant: 'destructive' });
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  // Auto-refresh QR code every 20s
+  useEffect(() => {
+    if (!showQrModal || whatsappStatus === 'connected') return;
+    fetchQrCode();
+    const interval = setInterval(fetchQrCode, 20000);
+    return () => clearInterval(interval);
+  }, [showQrModal, whatsappStatus]);
+
+  const handleDisconnect = async () => {
+    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance || !id) return;
+    setDisconnecting(true);
+    try {
+      const url = `${account.evolution_url.replace(/\/$/, '')}/instance/logout/${account.evolution_instance}`;
+      await fetch(url, { method: 'DELETE', headers: { apikey: account.evolution_key } });
+    } catch (err) {
+      // continue even if logout API fails
+    }
+    await supabase.from('accounts').update({ whatsapp_status: 'disconnected' }).eq('id', id);
+    setWhatsappStatus('disconnected');
+    queryClient.invalidateQueries({ queryKey: ['account', id] });
+    toast({ title: 'WhatsApp desconectado' });
+    setDisconnecting(false);
+  };
+
   const handleResetPassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
     const pw = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
