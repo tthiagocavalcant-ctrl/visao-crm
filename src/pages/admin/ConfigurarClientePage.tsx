@@ -59,7 +59,11 @@ const ConfigurarClientePage = () => {
   const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (accountData) setAccount({ ...accountData });
+    if (accountData) {
+      setAccount({ ...accountData });
+      const ws = accountData.whatsapp_status;
+      setWhatsappStatus(ws === 'connected' ? 'connected' : 'disconnected');
+    }
   }, [accountData]);
 
   const saveMutation = useMutation({
