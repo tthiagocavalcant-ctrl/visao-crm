@@ -409,7 +409,9 @@ const ConfigurarClientePage = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { setWhatsappStatus('disconnected'); toast({ title: 'WhatsApp desconectado' }); }} className="bg-destructive text-destructive-foreground">Desconectar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDisconnect} disabled={disconnecting} className="bg-destructive text-destructive-foreground">
+                          {disconnecting ? 'Desconectando...' : 'Desconectar'}
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
