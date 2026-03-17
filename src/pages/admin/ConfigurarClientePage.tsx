@@ -383,9 +383,6 @@ const ConfigurarClientePage = () => {
                    'Desconectado'}
                 </span>
               </div>
-              {whatsappStatus === 'connected' && (
-                <p className="text-xs text-muted-foreground">Última conexão: 12/03/2026 às 14:30</p>
-              )}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
