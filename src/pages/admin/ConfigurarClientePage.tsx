@@ -360,7 +360,7 @@ const ConfigurarClientePage = () => {
                 <Label>Instance Name</Label>
                 <Input value={account.evolution_instance || ''} onChange={e => update('evolution_instance', e.target.value)} placeholder="instance-name" />
               </div>
-              <Button onClick={() => handleSave('WhatsApp Config')} disabled={saveMutation.isPending} className="w-full gap-2">
+              <Button onClick={handleSaveWhatsApp} disabled={saveMutation.isPending} className="w-full gap-2">
                 {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Configuração'}
               </Button>
             </CardContent>
