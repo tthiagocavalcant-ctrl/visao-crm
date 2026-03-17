@@ -54,9 +54,16 @@ const ConfigurarClientePage = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (accountData) setAccount({ ...accountData });
+    if (accountData) {
+      setAccount({ ...accountData });
+      const ws = accountData.whatsapp_status;
+      setWhatsappStatus(ws === 'connected' ? 'connected' : 'disconnected');
+    }
   }, [accountData]);
 
   const saveMutation = useMutation({
@@ -81,6 +88,13 @@ const ConfigurarClientePage = () => {
       navigate('/admin/clientes');
     },
   });
+
+  // Auto-refresh QR code every 20s - must be before early returns
+  useEffect(() => {
+    if (!showQrModal || whatsappStatus === 'connected') return;
+    const interval = setInterval(fetchQrCode, 20000);
+    return () => clearInterval(interval);
+  }, [showQrModal, whatsappStatus]);
 
   if (isLoading) {
     return <div className="text-center py-16"><p className="text-muted-foreground">Carregando...</p></div>;
@@ -124,6 +138,67 @@ const ConfigurarClientePage = () => {
       max_users: (account as any).max_users,
     } as any);
     toast({ title: `${section} salvo com sucesso!` });
+  };
+
+  const handleSaveWhatsApp = async () => {
+    if (!account || !id) return;
+    const { error } = await supabase
+      .from('accounts')
+      .update({
+        evolution_url: account.evolution_url,
+        evolution_key: account.evolution_key,
+        evolution_instance: account.evolution_instance,
+      })
+      .eq('id', id);
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['account', id] });
+      toast({ title: 'Configurações salvas com sucesso' });
+    }
+  };
+
+  const fetchQrCode = async () => {
+    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance) return;
+    setQrLoading(true);
+    setQrCodeBase64(null);
+    setWhatsappStatus('connecting');
+    try {
+      const url = `${account.evolution_url.replace(/\/$/, '')}/instance/connect/${account.evolution_instance}`;
+      const res = await fetch(url, { headers: { apikey: account.evolution_key } });
+      const json = await res.json();
+      if (json.base64) {
+        setQrCodeBase64(json.base64);
+      } else if (json.instance?.state === 'open' || json.state === 'open') {
+        // Already connected
+        setWhatsappStatus('connected');
+        await supabase.from('accounts').update({ whatsapp_status: 'connected' }).eq('id', id!);
+        queryClient.invalidateQueries({ queryKey: ['account', id] });
+        setShowQrModal(false);
+        toast({ title: 'WhatsApp conectado!' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro ao gerar QR Code', description: err.message, variant: 'destructive' });
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+
+  const handleDisconnect = async () => {
+    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance || !id) return;
+    setDisconnecting(true);
+    try {
+      const url = `${account.evolution_url.replace(/\/$/, '')}/instance/logout/${account.evolution_instance}`;
+      await fetch(url, { method: 'DELETE', headers: { apikey: account.evolution_key } });
+    } catch (err) {
+      // continue even if logout API fails
+    }
+    await supabase.from('accounts').update({ whatsapp_status: 'disconnected' }).eq('id', id);
+    setWhatsappStatus('disconnected');
+    queryClient.invalidateQueries({ queryKey: ['account', id] });
+    toast({ title: 'WhatsApp desconectado' });
+    setDisconnecting(false);
   };
 
   const handleResetPassword = () => {
@@ -285,7 +360,7 @@ const ConfigurarClientePage = () => {
                 <Label>Instance Name</Label>
                 <Input value={account.evolution_instance || ''} onChange={e => update('evolution_instance', e.target.value)} placeholder="instance-name" />
               </div>
-              <Button onClick={() => handleSave('WhatsApp Config')} disabled={saveMutation.isPending} className="w-full gap-2">
+              <Button onClick={handleSaveWhatsApp} disabled={saveMutation.isPending} className="w-full gap-2">
                 {saveMutation.isPending ? 'Salvando...' : '💾 Salvar Configuração'}
               </Button>
             </CardContent>
@@ -308,9 +383,6 @@ const ConfigurarClientePage = () => {
                    'Desconectado'}
                 </span>
               </div>
-              {whatsappStatus === 'connected' && (
-                <p className="text-xs text-muted-foreground">Última conexão: 12/03/2026 às 14:30</p>
-              )}
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -334,7 +406,9 @@ const ConfigurarClientePage = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { setWhatsappStatus('disconnected'); toast({ title: 'WhatsApp desconectado' }); }} className="bg-destructive text-destructive-foreground">Desconectar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDisconnect} disabled={disconnecting} className="bg-destructive text-destructive-foreground">
+                          {disconnecting ? 'Desconectando...' : 'Desconectar'}
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -564,7 +638,7 @@ const ConfigurarClientePage = () => {
       </Dialog>
 
       {/* QR Code Modal */}
-      <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
+      <Dialog open={showQrModal} onOpenChange={(open) => { setShowQrModal(open); if (!open) { setQrCodeBase64(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Conectar WhatsApp — {account.name}</DialogTitle>
@@ -573,26 +647,24 @@ const ConfigurarClientePage = () => {
           <div className="space-y-4 py-4">
             <ol className="space-y-2 text-sm text-muted-foreground">
               <li className="flex gap-2"><span className="font-semibold text-foreground">1.</span> Abra o WhatsApp no celular do cliente</li>
-              <li className="flex gap-2"><span className="font-semibold text-foreground">2.</span> Vá em Aparelhos conectados</li>
-              <li className="flex gap-2"><span className="font-semibold text-foreground">3.</span> Toque em Conectar aparelho</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">2.</span> Vá em Dispositivos Conectados</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">3.</span> Toque em Conectar dispositivo</li>
               <li className="flex gap-2"><span className="font-semibold text-foreground">4.</span> Escaneie o QR Code abaixo</li>
             </ol>
-            <div className="flex items-center justify-center p-6 border border-border rounded bg-white">
-              <div className="w-48 h-48 bg-muted rounded flex items-center justify-center">
-                <QrCode className="w-16 h-16 text-muted-foreground" />
-              </div>
+            <div className="flex items-center justify-center p-6 border border-border rounded bg-background">
+              {qrLoading && !qrCodeBase64 ? (
+                <div className="w-48 h-48 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground animate-pulse">Conectando ao WhatsApp...</p>
+                </div>
+              ) : qrCodeBase64 ? (
+                <img src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`} alt="QR Code WhatsApp" className="w-48 h-48" />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center">
+                  <QrCode className="w-16 h-16 text-muted-foreground" />
+                </div>
+              )}
             </div>
             <p className="text-xs text-center text-muted-foreground">QR Code atualiza automaticamente a cada 20s</p>
-            <Button
-              onClick={() => {
-                setWhatsappStatus('connected');
-                setShowQrModal(false);
-                toast({ title: 'WhatsApp conectado!' });
-              }}
-              className="w-full gap-2"
-            >
-              ✓ Simular Conexão
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
