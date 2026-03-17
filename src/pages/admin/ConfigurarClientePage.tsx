@@ -641,7 +641,7 @@ const ConfigurarClientePage = () => {
       </Dialog>
 
       {/* QR Code Modal */}
-      <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
+      <Dialog open={showQrModal} onOpenChange={(open) => { setShowQrModal(open); if (!open) { setQrCodeBase64(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Conectar WhatsApp — {account.name}</DialogTitle>
@@ -650,26 +650,24 @@ const ConfigurarClientePage = () => {
           <div className="space-y-4 py-4">
             <ol className="space-y-2 text-sm text-muted-foreground">
               <li className="flex gap-2"><span className="font-semibold text-foreground">1.</span> Abra o WhatsApp no celular do cliente</li>
-              <li className="flex gap-2"><span className="font-semibold text-foreground">2.</span> Vá em Aparelhos conectados</li>
-              <li className="flex gap-2"><span className="font-semibold text-foreground">3.</span> Toque em Conectar aparelho</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">2.</span> Vá em Dispositivos Conectados</li>
+              <li className="flex gap-2"><span className="font-semibold text-foreground">3.</span> Toque em Conectar dispositivo</li>
               <li className="flex gap-2"><span className="font-semibold text-foreground">4.</span> Escaneie o QR Code abaixo</li>
             </ol>
-            <div className="flex items-center justify-center p-6 border border-border rounded bg-white">
-              <div className="w-48 h-48 bg-muted rounded flex items-center justify-center">
-                <QrCode className="w-16 h-16 text-muted-foreground" />
-              </div>
+            <div className="flex items-center justify-center p-6 border border-border rounded bg-background">
+              {qrLoading && !qrCodeBase64 ? (
+                <div className="w-48 h-48 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground animate-pulse">Conectando ao WhatsApp...</p>
+                </div>
+              ) : qrCodeBase64 ? (
+                <img src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`} alt="QR Code WhatsApp" className="w-48 h-48" />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center">
+                  <QrCode className="w-16 h-16 text-muted-foreground" />
+                </div>
+              )}
             </div>
             <p className="text-xs text-center text-muted-foreground">QR Code atualiza automaticamente a cada 20s</p>
-            <Button
-              onClick={() => {
-                setWhatsappStatus('connected');
-                setShowQrModal(false);
-                toast({ title: 'WhatsApp conectado!' });
-              }}
-              className="w-full gap-2"
-            >
-              ✓ Simular Conexão
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
