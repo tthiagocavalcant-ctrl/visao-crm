@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -242,6 +242,22 @@ const PipelinePage = () => {
     },
     enabled: !!accountId,
   });
+
+  // Realtime subscription for leads
+  useEffect(() => {
+    if (!accountId) return;
+    const channel = supabase
+      .channel('leads-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'leads', filter: `account_id=eq.${accountId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['leads', accountId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [accountId, queryClient]);
 
   // Fetch pipeline statuses
   const { data: statuses = INITIAL_STATUSES } = useQuery({
