@@ -132,7 +132,7 @@ const ConfigurarClientePage = () => {
       phone: account.phone,
       status: account.status,
       evolution_url: account.evolution_url,
-      evolution_key: account.evolution_key,
+      evolution_api_key: account.evolution_api_key,
       evolution_instance: account.evolution_instance,
       plan: (account as any).plan,
       max_users: (account as any).max_users,
@@ -146,7 +146,7 @@ const ConfigurarClientePage = () => {
       .from('accounts')
       .update({
         evolution_url: account.evolution_url,
-        evolution_key: account.evolution_key,
+        evolution_api_key: account.evolution_api_key,
         evolution_instance: account.evolution_instance,
       })
       .eq('id', id);
@@ -159,13 +159,13 @@ const ConfigurarClientePage = () => {
   };
 
   const fetchQrCode = async () => {
-    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance) return;
+    if (!account?.evolution_url || !account?.evolution_api_key || !account?.evolution_instance) return;
     setQrLoading(true);
     setQrCodeBase64(null);
     setWhatsappStatus('connecting');
     try {
       const url = `${account.evolution_url.replace(/\/$/, '')}/instance/connect/${account.evolution_instance}`;
-      const res = await fetch(url, { headers: { apikey: account.evolution_key } });
+      const res = await fetch(url, { headers: { apikey: account.evolution_api_key } });
       const json = await res.json();
       if (json.base64) {
         setQrCodeBase64(json.base64);
@@ -186,11 +186,11 @@ const ConfigurarClientePage = () => {
 
 
   const handleDisconnect = async () => {
-    if (!account?.evolution_url || !account?.evolution_key || !account?.evolution_instance || !id) return;
+    if (!account?.evolution_url || !account?.evolution_api_key || !account?.evolution_instance || !id) return;
     setDisconnecting(true);
     try {
       const url = `${account.evolution_url.replace(/\/$/, '')}/instance/logout/${account.evolution_instance}`;
-      await fetch(url, { method: 'DELETE', headers: { apikey: account.evolution_key } });
+      await fetch(url, { method: 'DELETE', headers: { apikey: account.evolution_api_key } });
     } catch (err) {
       // continue even if logout API fails
     }
@@ -347,8 +347,8 @@ const ConfigurarClientePage = () => {
                 <div className="flex gap-2">
                   <Input
                     type={showApiKey ? 'text' : 'password'}
-                    value={account.evolution_key || ''}
-                    onChange={e => update('evolution_key', e.target.value)}
+                    value={account.evolution_api_key || ''}
+                    onChange={e => update('evolution_api_key', e.target.value)}
                     placeholder="Sua API Key"
                   />
                   <Button variant="outline" size="sm" onClick={() => setShowApiKey(!showApiKey)} className="shrink-0">
@@ -387,7 +387,7 @@ const ConfigurarClientePage = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowQrModal(true)}
-                  disabled={!account.evolution_url || !account.evolution_key || !account.evolution_instance}
+                  disabled={!account.evolution_url || !account.evolution_api_key || !account.evolution_instance}
                   className="gap-2"
                 >
                   <QrCode className="w-4 h-4" /> Gerar QR Code
