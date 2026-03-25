@@ -282,8 +282,11 @@ const ContatosPage = () => {
                         </TooltipTrigger><TooltipContent>Editar</TooltipContent></Tooltip>
 
                         <Tooltip><TooltipTrigger asChild>
-                          <button className="p-1.5 rounded hover:bg-accent" onClick={() => navigate(`/conversas?phone=${lead.phone}`)}><MessageSquare className="w-3.5 h-3.5 text-muted-foreground" /></button>
-                        </TooltipTrigger><TooltipContent>Conversa</TooltipContent></Tooltip>
+                          <button className="p-1.5 rounded hover:bg-accent" onClick={() => {
+                            const phone = lead.phone.replace(/\D/g, '');
+                            window.open(`https://wa.me/${phone}`, '_blank', 'noopener,noreferrer');
+                          }}><MessageSquare className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                        </TooltipTrigger><TooltipContent>WhatsApp</TooltipContent></Tooltip>
 
                         <MoveStatusPopover lead={lead} statuses={statuses} accountId={accountId} />
 
