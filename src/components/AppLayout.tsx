@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
-  Home, MessageSquare, Kanban, Settings, LogOut, Sun, Moon, Users, Zap, Contact,
+  Home, Kanban, Settings, LogOut, Sun, Moon, Users, Contact,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -11,8 +11,6 @@ import { useQuery } from '@tanstack/react-query';
 const allNavItems = [
   { label: 'Início', icon: Home, href: '/dashboard', permission: 'dashboard' as const },
   { label: 'Pipeline CRM', icon: Kanban, href: '/pipeline', permission: 'pipeline' as const },
-  { label: 'Scripts', icon: MessageSquare, href: '/scripts', permission: 'scripts' as const },
-  { label: 'Follow-ups', icon: Zap, href: '/followups', permission: 'followups' as const },
   { label: 'Contatos', icon: Contact, href: '/contatos', permission: 'contatos' as const },
   { label: 'Configurações', icon: Settings, href: '/configuracoes', permission: 'settings' as const },
 ];
