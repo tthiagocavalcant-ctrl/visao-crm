@@ -19,8 +19,8 @@ export type Database = {
           api_key: string | null
           created_at: string | null
           email: string
+          evolution_api_key: string | null
           evolution_instance: string | null
-          evolution_key: string | null
           evolution_url: string | null
           facebook_pixel: string | null
           followup_webhook: string | null
@@ -44,8 +44,8 @@ export type Database = {
           api_key?: string | null
           created_at?: string | null
           email: string
+          evolution_api_key?: string | null
           evolution_instance?: string | null
-          evolution_key?: string | null
           evolution_url?: string | null
           facebook_pixel?: string | null
           followup_webhook?: string | null
@@ -69,8 +69,8 @@ export type Database = {
           api_key?: string | null
           created_at?: string | null
           email?: string
+          evolution_api_key?: string | null
           evolution_instance?: string | null
-          evolution_key?: string | null
           evolution_url?: string | null
           facebook_pixel?: string | null
           followup_webhook?: string | null
@@ -418,6 +418,8 @@ export type Database = {
           phone: string
           pipeline_status: string
           scheduled_at: string | null
+          source: string | null
+          status_id: string | null
           tags: string[] | null
           temperature: Database["public"]["Enums"]["lead_temperature"] | null
           updated_at: string | null
@@ -435,6 +437,8 @@ export type Database = {
           phone: string
           pipeline_status?: string
           scheduled_at?: string | null
+          source?: string | null
+          status_id?: string | null
           tags?: string[] | null
           temperature?: Database["public"]["Enums"]["lead_temperature"] | null
           updated_at?: string | null
@@ -452,6 +456,8 @@ export type Database = {
           phone?: string
           pipeline_status?: string
           scheduled_at?: string | null
+          source?: string | null
+          status_id?: string | null
           tags?: string[] | null
           temperature?: Database["public"]["Enums"]["lead_temperature"] | null
           updated_at?: string | null
@@ -462,6 +468,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_statuses"
             referencedColumns: ["id"]
           },
         ]
