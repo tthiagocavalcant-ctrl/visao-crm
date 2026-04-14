@@ -653,7 +653,7 @@ const SUPABASE_URL = "https://ywgqrutamfepvouflecp.supabase.co";
 const IntegracoesTab = ({ account }: { account: Account }) => {
   const queryClient = useQueryClient();
   const [evolutionUrl, setEvolutionUrl] = useState(account.evolution_url || '');
-  const [evolutionKey, setEvolutionKey] = useState(account.evolution_key || '');
+  const [evolutionKey, setEvolutionKey] = useState(account.evolution_api_key || '');
   const [evolutionInstance, setEvolutionInstance] = useState(account.evolution_instance || '');
 
   const whatsappWebhookUrl = `${SUPABASE_URL}/functions/v1/receive-whatsapp-lead?account_id=${account.id}`;
@@ -668,7 +668,7 @@ const IntegracoesTab = ({ account }: { account: Account }) => {
     mutationFn: async () => {
       const { error } = await supabase.from('accounts').update({
         evolution_url: evolutionUrl,
-        evolution_key: evolutionKey,
+        evolution_api_key: evolutionKey,
         evolution_instance: evolutionInstance,
       }).eq('id', account.id);
       if (error) throw error;
