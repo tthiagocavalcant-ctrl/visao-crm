@@ -1,0 +1,79 @@
+{
+  "name": "Meta Leads via Webhook → CRM Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meta-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Meta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "meta-lead-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body || $input.item.json;\nconst query = $input.item.json.query || {};\n\n// account_id pode vir na query string ou no body\nconst account_id = query.account_id || body.account_id;\n\nif (!account_id) throw new Error('account_id não informado');\n\n// Suporte a diferentes formatos de payload do Meta\n// Formato 1: campo direto { name, phone, email }\n// Formato 2: field_data array (Lead Ads nativo)\nlet name, phone, email, source;\n\nif (body.field_data && Array.isArray(body.field_data)) {\n  const get = (key) => {\n    const f = body.field_data.find(f => f.name === key);\n    return f ? f.values[0] : null;\n  };\n  name = get('full_name') || `${get('first_name') || ''} ${get('last_name') || ''}`.trim();\n  phone = get('phone_number') || get('phone');\n  email = get('email');\n} else {\n  name = body.name || body.full_name || body.nome;\n  phone = body.phone || body.phone_number || body.telefone;\n  email = body.email;\n}\n\n// Limpa telefone (só números)\nphone = (phone || '').replace(/\D/g, '');\n\nif (!name || !phone) throw new Error('name e phone são obrigatórios');\n\nsource = body.campaign_name || body.source || body.utm_campaign || 'Meta Ads';\n\nconst canal = body.canal || (body.source?.toLowerCase().includes('instagram') ? 'instagram' : 'facebook');\n\nreturn [{\n  json: {\n    account_id,\n    name,\n    phone,\n    email: email || null,\n    canal,\n    source,\n  }\n}];"
+      },
+      "name": "Mapear Campos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ywgqrutamfepvouflecp.supabase.co/functions/v1/receive-n8n-lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Enviar para CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, message: 'Lead recebido com sucesso' }) }}"
+      },
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Meta": {
+      "main": [
+        [{ "node": "Mapear Campos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mapear Campos": {
+      "main": [
+        [{ "node": "Enviar para CRM", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar para CRM": {
+      "main": [
+        [{ "node": "Responder OK", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
