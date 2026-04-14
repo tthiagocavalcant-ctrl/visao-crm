@@ -6,7 +6,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { BRAZILIAN_STATES } from '@/data/mock-data';
 import {
   Copy, Building2, Users, Upload, Plus, Pencil, Trash2, Eye, EyeOff, RefreshCw,
-  Kanban, LayoutDashboard, Download, Shield, AlertCircle,
+  Kanban, LayoutDashboard, Download, Shield, AlertCircle, Zap, Webhook, MessageCircle,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -39,7 +39,7 @@ const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
   delete_leads: false, manage_statuses: false, conversas: false,
 };
 
-const tabs = ['Empresa', 'Unidades', 'Equipe'];
+const tabs = ['Empresa', 'Unidades', 'Equipe', 'Integrações'];
 
 const ConfiguracoesPage = () => {
   const { user } = useAuth();
@@ -82,6 +82,7 @@ const ConfiguracoesPage = () => {
       {activeTab === 'Empresa' && account && <EmpresaTab account={account} />}
       {activeTab === 'Unidades' && <UnidadesTab />}
       {activeTab === 'Equipe' && <EquipeTab />}
+      {activeTab === 'Integrações' && account && <IntegracoesTab account={account} />}
     </div>
   );
 };
@@ -643,6 +644,155 @@ const EquipeTab = () => {
           <DialogFooter><Button onClick={() => setShowCredentials(null)} className="w-full">Fechar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const SUPABASE_URL = "https://ywgqrutamfepvouflecp.supabase.co";
+
+const IntegracoesTab = ({ account }: { account: Account }) => {
+  const queryClient = useQueryClient();
+  const [evolutionUrl, setEvolutionUrl] = useState(account.evolution_url || '');
+  const [evolutionKey, setEvolutionKey] = useState(account.evolution_key || '');
+  const [evolutionInstance, setEvolutionInstance] = useState(account.evolution_instance || '');
+
+  const whatsappWebhookUrl = `${SUPABASE_URL}/functions/v1/receive-whatsapp-lead?account_id=${account.id}`;
+  const n8nWebhookUrl = `${SUPABASE_URL}/functions/v1/receive-n8n-lead`;
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copiado para a área de transferência!' });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('accounts').update({
+        evolution_url: evolutionUrl,
+        evolution_key: evolutionKey,
+        evolution_instance: evolutionInstance,
+      }).eq('id', account.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-account'] });
+      toast({ title: 'Integrações salvas!' });
+    },
+    onError: () => toast({ title: 'Erro ao salvar', variant: 'destructive' }),
+  });
+
+  const n8nPayloadExample = JSON.stringify({
+    account_id: account.id,
+    name: "Nome do Lead",
+    phone: "5511999999999",
+    email: "lead@email.com",
+    canal: "trafego_pago",
+    source: "Facebook Ads - Campanha X",
+  }, null, 2);
+
+  return (
+    <div className="space-y-4">
+
+      {/* WhatsApp / Evolution API */}
+      <div className="bg-card border border-border rounded p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-green-500" />
+          <h3 className="text-section-title uppercase text-muted-foreground">WhatsApp (Evolution API)</h3>
+        </div>
+
+        <div className="bg-muted/40 rounded p-3 space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Configure este webhook na sua instância da Evolution API em <strong>Configurações → Webhook</strong>.
+            Todo novo contato que mandar mensagem será criado automaticamente na Pipeline.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">URL do Webhook (copie e cole na Evolution API)</label>
+          <div className="flex gap-2">
+            <Input value={whatsappWebhookUrl} readOnly className="font-mono text-xs bg-muted/30" />
+            <Button variant="outline" size="sm" onClick={() => copyText(whatsappWebhookUrl)}>
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">Evento necessário: <code className="bg-muted px-1 rounded">messages.upsert</code></p>
+        </div>
+
+        <div className="border-t border-border pt-3 space-y-3">
+          <p className="text-xs font-medium text-foreground">Credenciais da Evolution API (opcional — para envio de mensagens futuro)</p>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">URL da Evolution API</label>
+            <Input value={evolutionUrl} onChange={e => setEvolutionUrl(e.target.value)} placeholder="https://sua-evolution.com" />
+          </div>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">API Key</label>
+            <Input value={evolutionKey} onChange={e => setEvolutionKey(e.target.value)} placeholder="sua-api-key" type="password" />
+          </div>
+          <div>
+            <label className="block text-label text-muted-foreground mb-1">Nome da Instância</label>
+            <Input value={evolutionInstance} onChange={e => setEvolutionInstance(e.target.value)} placeholder="minha-instancia" />
+          </div>
+        </div>
+
+        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm">
+          {saveMutation.isPending ? 'Salvando...' : 'Salvar Configurações'}
+        </Button>
+      </div>
+
+      {/* n8n / Tráfego Pago */}
+      <div className="bg-card border border-border rounded p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-orange-500" />
+          <h3 className="text-section-title uppercase text-muted-foreground">n8n / Tráfego Pago</h3>
+        </div>
+
+        <div className="bg-muted/40 rounded p-3 space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Use esta URL como destino no seu fluxo do n8n. Configure um nó <strong>HTTP Request</strong> com
+            método <strong>POST</strong> apontando para esta URL. O lead será criado automaticamente na Pipeline.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">URL do Webhook para o n8n</label>
+          <div className="flex gap-2">
+            <Input value={n8nWebhookUrl} readOnly className="font-mono text-xs bg-muted/30" />
+            <Button variant="outline" size="sm" onClick={() => copyText(n8nWebhookUrl)}>
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Payload esperado (JSON)</label>
+          <div className="relative">
+            <pre className="bg-muted/50 rounded p-3 text-xs font-mono overflow-x-auto text-foreground/80 whitespace-pre-wrap">{n8nPayloadExample}</pre>
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => copyText(n8nPayloadExample)}
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Campos obrigatórios: <code className="bg-muted px-1 rounded">account_id</code>, <code className="bg-muted px-1 rounded">name</code>, <code className="bg-muted px-1 rounded">phone</code>.
+            Canais disponíveis: <code className="bg-muted px-1 rounded">trafego_pago</code>, <code className="bg-muted px-1 rounded">facebook</code>, <code className="bg-muted px-1 rounded">google</code>, <code className="bg-muted px-1 rounded">instagram</code>.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-label text-muted-foreground mb-1">Seu Account ID</label>
+          <div className="flex gap-2">
+            <Input value={account.id} readOnly className="font-mono text-xs bg-muted/30" />
+            <Button variant="outline" size="sm" onClick={() => copyText(account.id)}>
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">Use este ID no campo <code className="bg-muted px-1 rounded">account_id</code> do payload.</p>
+        </div>
+      </div>
+
     </div>
   );
 };
